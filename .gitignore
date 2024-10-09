@@ -2,7 +2,15 @@
 .Rhistory
 .RData
 .Ruserdata
+
 fig/
-patter-method*
+
 *.log
 *.tex
+*_files
+*.rmarkdown
+
+patter-method*
+*patter-outline-code.R
+
+
