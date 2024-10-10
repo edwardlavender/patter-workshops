@@ -11,8 +11,8 @@ fig/*
 *_files
 *.rmarkdown
 temporary*
+deprecated
 
 patter-method*
-*patter-intro.R
 *patter-intro-advanced.R
 
