@@ -6,7 +6,6 @@
 dev/
 fig/
 
-
 *.log
 *.tex
 *_files
@@ -14,6 +13,6 @@ fig/
 temporary*
 
 patter-method*
-*patter-outline.R
-*patter-outline-advanced.R
+*patter-intro.R
+*patter-intro-advanced.R
 
