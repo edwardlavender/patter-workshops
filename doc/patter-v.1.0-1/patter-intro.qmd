@@ -1072,6 +1072,10 @@ map_pou(.map = map, .coord = fwd$states)
 Recall that particles are equally weighted at this point thanks to resampling. 
 :::
 
+::: callout-tip
+`map_*()` functions such as `map_pou()` and `map_dens()` accept any `data.table` of (x, y) coordinates. Time series and weights (marks) are handled automatically. 
+:::
+
 # Particle filter
 
 ```{r, echo = FALSE}
