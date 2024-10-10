@@ -3,14 +3,17 @@
 .RData
 .Ruserdata
 
+dev/
 fig/
+
 
 *.log
 *.tex
 *_files
 *.rmarkdown
+temporary*
 
 patter-method*
 *patter-outline-code.R
-
+*patter-outline-advanced.R
 
