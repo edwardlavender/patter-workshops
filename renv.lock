@@ -1,6 +1,6 @@
 {
   "R": {
-    "Version": "4.3.1",
+    "Version": "4.4.1",
     "Repositories": [
       {
         "Name": "CRAN",
@@ -502,7 +502,7 @@
         "rlang",
         "terra"
       ],
-      "Hash": "4b804416e76e2b1cf7702c036d62f995"
+      "Hash": "03402fc002ea15de69ad8d5cb66a09ae"
     },
     "pillar": {
       "Package": "pillar",
