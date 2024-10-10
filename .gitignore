@@ -3,7 +3,8 @@
 .RData
 .Ruserdata
 
-fig/
+fig/*
+!fig/particle-maps.png
 
 *.log
 *.tex
