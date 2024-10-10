@@ -45,6 +45,14 @@ knitr:
     -   Interactive presentation & questions
     -   (Time allowing) Optional practical activity (using example datasets or your own)
 
+## Questionaire
+
+-   Experience with animal-tracking?
+-   Experience with `R` and `Julia`?
+-   Experience with statistical modelling, including SSMs?
+-   Experience with Bayesian statistics?
+-   Experience with particle algorithms?
+
 ## Context {.smaller}
 
 -   There are many packages for animal tracking (Joo et al. 2020)
@@ -77,6 +85,10 @@ For passive acoustic telemetry, `patter` is the only package that reconstructs i
     -   data exploration (detection statistics, movement metrics)
     -   'flapper' algorithms
 
+::: callout-note
+Let us know if there are routines in `flapper` that you'd like to see in `patter`. 
+:::
+
 ## Evolution
 
 -   `patter` focuses specifically on **model inference** for SSMs using **particle algorithms**
@@ -103,6 +115,39 @@ Lavender, E. et al. (2024a). Supporting Information.
 
 `vignette("a-methodology", package = "patter")`
 
+## Methodology
+
+1. We formulate a Bayesian state-space model for the joint probability distribution $f(\mathbf{s}_{1:T} \mid \mathbf{y}_{1:T})$ of a tagged individual's possible trajectories from the start to the end of the time series
+
+2. The joint probability distribution is expressed in terms of a prior (the movement process) and a likelihood (the observation process)
+
+$$f(\mathbf{s}_{1:T} \mid \mathbf{y}_{1:T}) \propto f(\mathbf{s}_{1:T}) f(\mathbf{y}_{1:T} \mid \mathbf{s}_{1:T})$$
+
+## Methodology
+
+3. Model inference is performed using particle filtering and smoothing
+
+4. The particle filter approximates the partial marginal distribution $f(\mathbf{s}_t \mid \mathbf{y}_{1:t})$ using a set of weighted samples called 'particles'
+
+5. The particle smoother approximates the full marginal distribution $f(\mathbf{s}_t \mid \mathbf{y}_{1:T})$
+
+## Methodology
+
+![Inference using particle algorithms.](../../fig/ssm-inference.png)
+
+## Methodology
+
+![Particle filter intuition.](../../fig/particle-filter.png)
+
+## Methodology
+
+-   Particle smoothers reweight particles from the filter to approximate $f(\mathbf{s}_{t} \mid \mathbf{y}_{1:T})$
+-   The two-filter smoother consists of a re-weighting of particles from a forward filter run and a backward filter run based on the probability density of movements between pairs of locations.
+
+## Methodology
+
+![The two filter smoother.](../../fig/particle-smoother.png)
+
 # Set up
 
 ## Operating systems
@@ -121,6 +166,10 @@ There are some special considerations for running `patter` on linux that we won'
     -   On Windows, install `RTools`
     -   On `MacOS`, install `Xcode` (and configure `.Makevars` as required)
     -   Install `patter` (and let it handle `Julia` dependencies)
+
+::: callout-important
+Install `Julia` 1.10 (LTS). `patter` does not currently support `Julia` 1.11. 
+:::
 
 ## Project set up {.smaller}
 
@@ -146,7 +195,7 @@ There are some special considerations for running `patter` on linux that we won'
 
 -   (optional) `JULIA_NUM_THREADS` is the number of threads.
 
-::: callout-note
+::: callout-important
 On Windows, `JULIA_NUM_THREADS` must be set system-wide as an environment variable. Follow the guidance here: <https://github.com/edwardlavender/patter/issues/13>.
 :::
 
@@ -222,6 +271,24 @@ julia_connect()
 For a summary of the workflow, see `vignette("b-workflow-outline", package = "patter")`. See the [README](https://github.com/edwardlavender/patter) for an example workflow. `patter` functions are well documented. Please read them carefully and follow the links to the `Patter.jl` documentation where directed. Help us to improve the documentation by submitting [GitHub issues](https://github.com/edwardlavender/patter/issues).
 :::
 
+## Overview 
+
+![`patter` workflow](../../fig/patter-workflow.png)
+
+## Overview {.smaller}
+
+-   `patter` is easy: 
+    1. Define the state type and the movement model
+    2. Define the observation model(s) 
+    3. Simulate observations or assemble real-world datasets
+    4. Run the forward filter and the backward information filter
+    5. Run the particle smoother
+    6. Analyse the results! 
+    
+-   The challenge is to formulate biologically sensible movement and observation models 
+-   The code is just boilerplate: copy & paste and edit as required! 
+-   Please reach out on [GitHub](https://github.com/edwardlavender/patter/issues) with queries
+
 # Boilerplate setup
 
 ## Boilerplate setup {.smaller}
@@ -269,7 +336,7 @@ julia_connect()
 -   Set the seed in `R` and `Julia` via `set_seed()`:
 
 ```{r}
-set_seed(2024 - 10 - 18)
+set_seed(2024)
 ```
 
 # An example workflow with real data
@@ -419,6 +486,10 @@ timeline <- seq(as.POSIXct("2016-03-17 01:50:00", tz = "UTC"),
                 by = "2 mins")
 str(timeline)
 ```
+
+::: callout-tip
+Depending on the time step, it is generally wise to split the time series into chunks (e.g., one-month in duration) and run the algorithms for each chunk. Running the algorithms over prolonged periods increases the chances of convergence failure and may exhaust available memory.
+:::
 
 ## State
 
@@ -879,7 +950,7 @@ In `patter@dev`, `.map`, `.xinit_pars` and `.model_obs` are no longer required.
 ## Particle filter {.smaller}
 
 | **Argument**            | **Description**                                                                               |
-|------------------|------------------------------------------------------|
+|-----------------|-------------------------------------------------------|
 | `.map`                  | The map                                                                                       |
 | `.timeline`             | The timeline                                                                                  |
 | `.state`                | The state                                                                                     |
@@ -1086,7 +1157,7 @@ smo <- pf_smoother_two_filter(.n_particle = 100L, .n_sim = 100L)
 ## Two-filter smoother {.smaller}
 
 | **Argument**  | **Description**                                                                                  |
-|-----------------|-------------------------------------------------------|
+|---------------|---------------------------------------------------------|
 | `.n_particle` | The number of particles from the filter used in the algorithm                                    |
 | `.n_sim`      | The number of Monte Carlo simulations used to compute the normalisation constant (when required) |
 
@@ -1673,26 +1744,406 @@ coa_ud <- map_dens(.map = map,
 par(pp)
 ```
 
-## Residency
-
 # Advanced
+
+## Custom `State`, `ModelMove` `ModelObs`
+
+-   To incorporate custom structures, associated **simulation** and **density** `Julia` methods are required:
+    - `Patter.simulate_step()` and `Patter.logpdf_step()`
+    - `Patter.simulate_obs()` and `Patter.logpdf_obs()`
+    
+::: callour-tip
+It is a good idea to include Julia code in `./Julia/src` in a `patter-structs.jl` file (or similar). Source `Julia` code with `JuliaCall::julia_source()`. 
+:::
+
+## Custom `State` and `ModelMove`
+
+-   For custom `State` and `ModelMove` structures, we need to:
+    1.  Register the structures in `Julia`
+    2.  (optional) Write `states_init()` methods to translate initial coordinates to `State`s
+    3.  Write simulation and density methods:
+        -   `Patter.simulate_step(state, model, ...)` (for simulation)
+        -   `logpdf_step(state_from, state_to, model_move, ...)` (for smoothing)
+    4.  (optional) Write a `move_*()` wrapper for convenient `R` usage
+
+## Custom `ModelObs`
+
+-   For custom `ModelObs` structures, we need to:
+    1.  (optional) Write `map_init()` method to sample initial `State`s efficiently
+    2.  Write simulation and density methods:
+        -   `Patter.simulate_obs(state, model, ...)`
+        -   `Patter.logpdf_obs(state, model, ...)`
+        
+## Custom workflow  
+
+-   Define a custom `State`
+-   We will track the location of an animal in three dimensions:
+
+```{julia}
+struct StateXYZ <: Patter.State
+  # Map value
+  # > This is required for all states & is the value on the map at (x, y)
+  map_value::Float64
+  # Coordinates
+  x::Float64
+  y::Float64
+  z::Float64
+end
+```
+
+## Custom workflow  
+
+-   (optional) Define a function to convert initial coordinates to the state
+-   Here, we simply have to add initial depth values
+-   This is necessary for automated sampling of initial states
+
+```{r}
+ states_init.StateXYZ <- function(.state, .coords) {
+  # Define global variables
+  z <- map_value <- NULL
+  # Add initial z values
+  .coords[, z := map_value * runif(.N)]
+  .coords
+}
+```
+
+::: callout-note
+In `patter@dev`, a `Patter.states_init()` `Julia` method is required instead.
+:::
+
+## Custom workflow  
+
+-   Define a corresponding movement model
+
+```{julia}
+struct ModelMoveXYZ{T, U, V, W} <: Patter.ModelMove
+  # The environment (i.e., map)
+  # > This defines the regions within which movements are permitted (i.e., in water)
+  map::T
+  # Distribution for step lengths
+  dbn_length::U
+  # Distribution for turning angles
+  dbn_angle::V
+  # Distribution for changes in depth
+  dbn_z_delta::W
+end
+```
+
+::: callout-note
+In `patter@dev`, a `mobility` field is also required.
+:::
+
+## Custom workflow  
+
+-   Define a function to simulate new states using the movement model
+-   This is necessary for `sim_path_walk()` and `pf_filter()`
+
+```{julia}
+function Patter.simulate_step(state::StateXYZ, model::ModelMoveXYZ, t::Int64)
+  # Simulate a step length
+  length = rand(model.dbn_length)
+  # Simulate a turning angle
+  angle  = rand(model.dbn_angle)
+  # Calculate new x, y, z coordinates
+  x      = state.x + length * cos(angle)
+  y      = state.y + length * sin(angle)
+  z      = state.z + rand(model.dbn_z_delta)
+  # Include the map value
+  map_value = extract(model.map, x, y)
+  # Define the state
+  StateXYZ(map_value, x, y, z)
+end
+```
+
+::: callout-note
+Function arguments are boilerplate. You can edit this code as required for other states. In custom `Julia` methods, use closure to incorporate additional arguments if required.
+:::
+
+## Custom workflow  
+
+-   Provide a `logpdf_step()` method to compute the **unnormalised** log-probability of an **unrestricted** move
+-   This is necessary for `pf_filter_two_filter()`
+
+```{julia}
+function Patter.logpdf_step(state_from::StateXYZ, state_to::StateXYZ,
+                            model_move::ModelMoveXYZ,
+                            t::Int64,
+                            length::Float64, angle::Float64)
+  # Calculate change in depth
+  z_delta = state_to.z - state_from.z
+  # Evaluate unnormalised log probability
+  logpdf(model_move.dbn_length, length) +
+    logpdf(model_move.dbn_angle, angle) +
+    logpdf(model_move.dbn_z_delta, z_delta)
+end
+```
+
+## Custom workflow  
+
+-   (optional) Write an R wrapper to conveniently trial different parameterisations from `R`:
+
+```{r}
+move_xyz <- function(length = "truncated(Gamma(1.0, 750.0), upper = 750.0)",
+                     angle = "Uniform(-pi, pi)",
+                     z_delta = "Normal(0, 3.5)") {
+  glue::glue('ModelMoveXYZ(env, {length}, {angle}, {z_delta});')
+}
+```
+
+## Custom workflow  
+
+-   Now we'll define a custom observation model for our pelagic species
+-   We imagine we have depth observations
+
+```{julia}
+struct ModelObsDepthNormal <: Patter.ModelObs
+  sensor_id::Int64
+  depth_sigma::Float64
+end
+```
+
+## Custom workflow  
+
+-   (optional) Write a `map_init()` method for more efficient automated sampling of initial states
+-   This example routine ensures that we only sample from locations where the bathymetric depth is at least as deep at the observed depth
+
+```{R}
+map_init.ModelObsDepthNormal <- 
+  function(.map, .timeline, .direction, .dataset, .model, .pars) {
+    t1 <- ifelse(.direction == "forward", .timeline[1], .timeline[length(.timeline)])
+    pos <- which(.dataset$timestamp == t1)
+    if (length(pos) == 0L) {
+      return(.map)
+    }
+    depth <- .dataset$obs[pos]
+    terra::mask(.map, .map >= depth, maskvalues = 0)
+}
+```
+
+::: callout-note
+In `patter@dev`, a `Patter.map_init()` `Julia` method is required instead.
+:::
+
+## Custom workflow  
+
+-   (optional) Write a `Patter.simulate_obs()` method to simulate new observations 
+-   This is necessary for `sim_observations()`
+
+```{julia}
+function Patter.simulate_obs(state::StateXYZ, model::ModelObsDepthNormal, t::Int64)
+  dbn   = truncated(Normal(state.z, model.depth_sigma), 0, state.map_value)
+  rand(dbn)
+end
+```
+
+## Custom workflow  
+
+-   Write a `Patter.logpdf_obs()` method to evaluate the log-probability of the observations
+-   This is required for `pf_filter()`
+
+```{julia}
+function Patter.logpdf_obs(state::State, model::ModelObsDepthNormal, t::Int64, obs::Float64)
+  dbn   = truncated(Normal(state.map_value, model.depth_sigma),
+                    0.0, state.map_value)
+  logpdf(dbn, obs)
+end
+```
+
+## Custom workflow
+
+-   Simulate an example movement path:
+```{r, eval = FALSE}
+ state      <- "StateXYZ"
+ mobility   <- 750.0
+ model_move <- move_xyz()
+ path <- sim_path_walk(.map = map,
+                       .timeline = timeline,
+                       .state = state,
+                       .model_move = model_move)
+
+```
+
+## Custom workflow
+
+-   Simulate an example movement path:
+```{r, echo = FALSE}
+ state      <- "StateXYZ"
+ mobility   <- 750.0
+ model_move <- move_xyz()
+ path <- sim_path_walk(.map = map,
+                       .timeline = timeline,
+                       .state = state,
+                       .model_move = model_move)
+
+```
+
+## Custom workflow
+
+-   Simulate observations:
+
+```{r}
+# Run simulation 
+ obs <-
+   sim_observations(.timeline =
+                      timeline,
+                    .model_obs =
+                      "ModelObsDepthNormal",
+                    .model_obs_pars =
+                      list(data.table(sensor_id = 1L, depth_sigma = 5)))
+ arc  <- obs$ModelObsDepthNormal[[1]]
+ yobs <- list(ModelObsDepthNormal = arc)
+```
+
+```{r, eval = FALSE}
+ # Visualise simulated observations 
+ plot(arc$timestamp, arc$obs * -1,
+      col = "royalblue", type = "l",
+      ylim = c(-max(arc$obs), 0),
+      xlab = "Time stamp", ylab = "Depth (m)")
+```
+
+## Custom workflow
+
+```{r, echo = FALSE}
+ plot(arc$timestamp, arc$obs * -1,
+      col = "royalblue", type = "l",
+      ylim = c(-max(arc$obs), 0),
+      xlab = "Time stamp", ylab = "Depth (m)")
+```
+
+## Custom workflow
+
+-   Run the algorithms:
+```{r}
+ args <- list(.map         = map,
+              .timeline    = timeline,
+              .state       = state,
+              .xinit_pars  = list(mobility = mobility),
+              .yobs        = yobs,
+              .model_obs   = names(yobs),
+              .model_move  = model_move,
+              .n_particle  = 1e5L)
+
+ fwd <- do.call(pf_filter, args, quote = TRUE)
+ args$.direction <- "backward"
+ bwd <- do.call(pf_filter, args, quote = TRUE)
+ smo <- pf_smoother_two_filter()
+```
+
+## Custom workflow
+
+-   Compare simulated depths with particle depths:
+```{r}
+plot(smo$states$timestamp, smo$states$z * -1, 
+     pch = ".", col = "dimgrey", 
+     ylim = c(-max(smo$states$z), 0),
+     xlab = "Time stamp", ylab = "Depth (m)")
+lines(arc$timestamp, arc$obs * -1, col = "royalblue")
+```
+
+## Custom workflow
+
+-   Compare simulated and reconstructed patterns of space use: 
+
+```{r, eval = FALSE}
+pp <- par(mfrow = c(1, 2))
+map_dens(.map = map, 
+         .coord = path, 
+         .discretise = TRUE, 
+         sigma = bw.diggle)
+map_dens(.map = map, 
+         .coord = smo$states, 
+         .discretise = TRUE, 
+         sigma = bw.diggle)
+par(pp)
+```
+
+## Custom workflow
+
+```{r, echo = FALSE}
+pp <- par(mfrow = c(1, 2))
+map_dens(.map = map, .coord = path, .discretise = TRUE, sigma = bw.diggle) |> invisible()
+map_dens(.map = map, .coord = smo$states, .discretise = TRUE, sigma = bw.diggle) |> invisible()
+par(pp)
+```
 
 ## Parallelisation
 
-## Custom States, ModelObs and ModelMove
+-   In practice, we want to analyse the data for many individuals
 
-Custom state -\> custom movement model -\> wrapper R move\_\*() function StateXYZ -\> ModelMoveXYZ -\> move_xyz() states_init.StateXYZ
+-   You have two options for parallelisation:
 
-Patter.simulate_step(state::StateXYZ, model::ModelMoveXYZ, ...) logpdf_step(state_from::StateXYZ, state_to::StateXYZ, model_move::ModelMoveXYZ, ...)
+    1.  (Recommended) Iterate over individuals in sequence and **use multi-threading in `Julia`**
+    2.  Parallelise over time series in `R` in a socket cluster and use single-threading in `Julia`
 
-simulate_obs(state::StateXYZD, model::ModelObsDepthNormal, ...) logpdf_obs(state::State, model::ModelObsDepthNormal, ...)
+-   Forking is not supported with `JuliaCall`
+
+## Parallelisation {.smaller .scrollable}
+
+-   Here is some pseudocode to set up a socket cluster
+-   This approach is generally not recommended if avoidable
+-   On `MacOS`, you may require `hide-progress` `Patter.jl` branch
+
+```{r, eval = FALSE}
+# Initialise Julia
+julia_connect(.threads = 1L)
+
+# Set up cluster 
+cl <- makeCluster(2L)
+clusterExport(cl, ...)
+clusterEvalQ(cl, {
+  library(patter)
+  
+  # Iteratively attempt julia_connect()
+  # > On Windows, Julia make be locked -> error
+  try(julia_connect(), ...)
+  
+  # Set Julia objects on each core
+  JuliaCall:::.julia$cmd("using RCall")
+  set_map(...)
+  set_seed()
+  
+  NULL
+})
+
+# Run analyses in parallel e.g., via cl_lapply()
+# * See .chunk argument for more efficient parallelism
+patter::cl_lapply(..., .cl = cl, .fun = function(x) {
+  patter_workflow(...)
+})
+```
+
+::: See the [`patter-eval`](https://github.com/edwardlavender/patter-eval/blob/main/R/008-run-patter.R) project for an example where socket clusters were used due to storage limitations. It may be a good idea to get in touch if you go down this road. :::
+
+## Parallelisation
+
+-   For large-scale analyses, it is a good idea to gauge (and minimise) requirements
+-   These rack up quickly if you are not careful
+
+::: callout-tip
+The `file_size()` helper is a useful function for checking file size.
+:::
 
 # Development
 
--   HPC, linux etc.
+1.  **Package deployment on linux and HPC linux environments**
+
+2.  **Improvements to consistency (function arguments and objects)**
+
+3.  Backward smoothing and sampling algorithm(s)
+
+4.  Community-driven `PatterModels.jl` accessories package
+
+5.  Community-driven conversion routines
+
+6.  Additional helper routines (residency, spatial tools, ...)
+
+7.  Continued optimisation
 
 # Issues
 
 -   Please get in touch with queries, issues & suggestions!
+
+-   Don't spend weeks trying to get `patter` working if you hit a problem---reach out!
 
 -   See <https://github.com/edwardlavender/patter/issues>
