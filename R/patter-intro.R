@@ -144,7 +144,7 @@ datalist <- pat_setup_data(.map = map,
 #### Assemble observations (acoustics)
 # Assemble a timeline of acoustic observations (0, 1) and model parameters
 # * We include ModelObsAcousticLogisTrunc model parameters via `.moorings`
-# * We revise the detection range
+# * We revise the detection range currently recorded in the dataset
 moorings[, receiver_gamma := 1750]
 acc <- assemble_acoustics(.timeline = timeline,
                           .acoustics = det,
@@ -175,6 +175,18 @@ yobs <- list(ModelObsAcousticLogisTrunc = acc,
 # * How would you implement another `ModelObs` structure?
 # * Can you implement the `ModelObsDepthUniform` structure for these data?
 
+# (optional) additional tasks
+# * Are you familiar with the `data.table` package in R?
+# - `patter` functions use `data.table`s instead of `data.frame`s
+# - In fact, the code above that looks like dplyr, is `data.table` at the back
+# - `data.table`s are similar but can behave much faster
+# - But you might also find that `data.table`s behave in unexpected ways
+# * Can you understand what happens in the code below?
+arc_tmp1 <- copy(arc)
+arc_tmp2 <- arc_tmp1
+arc_tmp2[, tmp := 1L]
+arc_tmp1
+
 
 ###########################
 #### Model inference
@@ -198,10 +210,10 @@ fwd <- pf_filter(.map = map,
 # * What about creating an animation of particle movement (hint: see ?`pf_plot_xy()`)?
 # * What checks would you do to check `pf_filter()` has worked as expected?
 # * At the moment of detection, how far are particles from receivers? Why?
-# * How would you analyse filter diagnostics?
+# * How would you analyse filter diagnostics (hint: see `fwd$diagnostics`)?
 # * Are filter diagnostics acceptable in this example?
 # * How could we improve filter diagnostics?
-# * If we write the outputs from fwd to file, how much storage space do we need?
+# * If we write the outputs from `fwd` to file, how much storage space do we need?
 # * What does that tell us about the storage requirements of a full-scale analysis?
 
 #### Run backward information filter (~12 s)
@@ -226,7 +238,7 @@ smo <- pf_smoother_two_filter(.n_particle = 100L)
 # (optional) tasks
 # * Repeat the tasks from the filter to examine the behaviour of the smoother
 # * How does computation time change if you change .n_particle?
-# * How does this differ from the smoother?
+# * How does this differ from the filter? Why?
 # * How repeatable are multiple runs of the particle filter/smoother?
 
 #### Map utilisation distribution with/without kernel smoothing (~1 s)
@@ -242,9 +254,10 @@ par(pp)
 # (optional) tasks
 # * How do we interpret these maps?
 # * Are you satisfied with this result? If not, why not? How would you improve it?
-# * For `map_pou()`, how do the results change with pixel resolution?
+# * For `map_pou()`, how do the results change with grid resolution?
 # * For `map_dens()`, what is the pixel resolution used by the estimation routine?
-# * Does this differ from the resolution of the map?
+#   (hint: see ?`density.ppp` and follow the documentation)
+# * Does this differ from the grid resolution of the map?
 # * How does `map_dens()` depend on the `sigma` argument?
 # * (Advanced) How would you write a loop to trial different sigma parameters?
 #   * Hint: see `?patter::cl_lapply()` and `?terra::wrap()`
@@ -273,29 +286,32 @@ par(pp)
 ###########################
 #### Movement model
 
-# We use the movement model defined above.
+# We use the state & movement model defined above.
 
 # (optional) tasks
 # * Experiment with this choice
 
-#### Simulate a 'true' path
+#### Simulate a path
 path_coord <- sim_path_walk(.map = map,
                             .timeline = timeline,
                             .state = state,
                             .model_move = model_move)
 
-#### Estimate a 'true' pattern of space use
+#### Visualise the pattern of space use for the simulated path
 path_ud <- map_dens(.map = map,
                     .coord = path_coord,
                     .discretise = TRUE,
                     .fterra = TRUE,
                     sigma = bw.diggle)
 
+# (optional) tasks
+# * How are path coordinates handled differently than particles in `map_dens()`?
+
 
 ###########################
 #### Simulate observations
 
-#### Define sensor parameters for the ModelObsAcousticLogisTrunc struct
+#### Define sensor parameters for the `ModelObsAcousticLogisTrunc` struct
 # In this example, we use the real receiver positions
 pars_ModelObsAcousticLogisTrunc <-
   moorings |>
@@ -304,7 +320,7 @@ pars_ModelObsAcousticLogisTrunc <-
          "receiver_alpha", "receiver_beta", "receiver_gamma") |>
   as.data.table()
 
-#### Define sensor parameters for the ModelObsDepthNormalTrunc struct
+#### Define sensor parameters for the `ModelObsDepthNormalTrunc` struct
 pars_ModelObsDepthNormalTrunc <-
   data.table(sensor_id = 1L,
              depth_sigma = 100,
@@ -324,6 +340,7 @@ obs <- sim_observations(.timeline = timeline,
 # * What does `sensor_id = 1L` mean in `pars_ModelObsDepthNormalTrunc`?
 # * For a given `ModelObs` structure, how do we find out the required parameters?
 # * How would you simulate observations for a hypothetical receiver array?
+#   (hint: see `?sim_array`)
 # * Can you simulate observations using another `ModelObs` structure?
 # * What is the structure of the object returned by `sim_observations()`?
 # * Can you plot the simulated observations?
@@ -337,11 +354,12 @@ obs <- sim_observations(.timeline = timeline,
 # * Can you implement the filter and smoother using simulated data?
 # * How do reconstructed maps match the simulated data?
 # * Why are there differences?
-# * Can you create a comparable map using the `coa()` function?
-# * How does a map based on COAs differ?
 # * How does the map change if you only model one data type?
 # * What does this tell us about the relative contribution of the two datasets in this system?
 # * If you were planning a study in this system, would you invest in more receivers or more archival tags based on these results? Why?
+# * Can you create a comparable map using the `coa()` function?
+# * How does a map based on COAs differ?
+# * Which map is preferable and why?
 
 
 #### End of code.
