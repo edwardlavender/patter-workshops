@@ -702,7 +702,7 @@
       "RemoteHost": "api.github.com",
       "RemoteRepo": "patter",
       "RemoteUsername": "edwardlavender",
-      "RemoteSha": "30d84dc494d5ce367f9c434f1b928d200dc70d06",
+      "RemoteSha": "95664873f661b5ca948f643feac92ab65f3c593a",
       "Requirements": [
         "JuliaCall",
         "R",
@@ -715,7 +715,7 @@
         "rlang",
         "terra"
       ],
-      "Hash": "03402fc002ea15de69ad8d5cb66a09ae"
+      "Hash": "fbf131bb78366f0c3199cfe1b14077e1"
     },
     "pillar": {
       "Package": "pillar",
