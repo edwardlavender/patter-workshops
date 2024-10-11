@@ -24,12 +24,12 @@ filters and smoothers). This wraps the high-performance
 
 <figure>
 <img src="./fig/particle-maps.png"
-alt="patter implements particle filtering and smoothing algorithms. The algorithms reconstruct movements, patterns of space use and residency from animal-tracking data, particularly in acoustic telemetry systems" />
+alt="patter implements particle filtering and smoothing algorithms. The algorithms reconstruct movements, patterns of space use and residency from animal-tracking data, particularly in acoustic telemetry systems." />
 <figcaption aria-hidden="true"><strong><code>patter</code> implements
 particle filtering and smoothing algorithms</strong>. The algorithms
 reconstruct movements, patterns of space use and residency from
 animal-tracking data, particularly in acoustic telemetry
-systems</figcaption>
+systems.</figcaption>
 </figure>
 
 # Dependencies
@@ -64,15 +64,15 @@ The following directories are relevant for users who clone the project:
       Session;
     - `inst/tree.rds` is a record of the project directory tree; <br/>
 
-3.  **`dev/`** contains project-management scripts
+3.  **`dev/`** contains project-management scripts:
 
     - `01-dev.R` records project set up and development;
     - `02-clone.R` is used to clone the project;
     - `03-utils.R` contains supporting utilities;
 
-4.  **`Julia/`** is the `Julia` project directory.
+4.  **`Julia/`** is the `Julia` project directory
 
-5.  **`fig/`** contains selected figure(s).
+5.  **`fig/`** contains selected figure(s)
 
 # Project clones
 
