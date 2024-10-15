@@ -7,6 +7,7 @@ author:
 format: 
   revealjs:
     self-contained: true
+    slide-number: true
 knitr:
   opts_chunk:
     echo: true
@@ -156,26 +157,26 @@ $$f(\mathbf{s}_{1:T} \mid \mathbf{y}_{1:T}) \propto f(\mathbf{s}_{1:T}) f(\mathb
 There are some special considerations for running `patter` on linux that we won't discuss today. Please get in touch if you are running `patter` on HPC linux environments.
 :::
 
-## Installation
+## Installation {.smaller}
 
 -   To install `patter`, follow the instructions on <https://github.com/edwardlavender/patter>
-    -   Install `R` and `Julia`
-    -   On Windows, install `RTools`
-    -   On `MacOS`, install `Xcode` (and configure `.Makevars` as required)
-    -   Install `patter` (and let it handle `Julia` dependencies)
+    -   Install [`R`](https://www.r-project.org) and [`Julia`](https://julialang.org)
+    -   On Windows, install [`RTools`](https://cran.r-project.org/bin/windows/Rtools/)
+    -   On `MacOS`, if required, install [`Xcode`](https://developer.apple.com/xcode/resources/) (and configure `.Makevars`)
+    -   Install [`patter`](https://github.com/edwardlavender/Patter) (and let it handle `Julia` dependencies)
 
 ::: callout-important
-Install `Julia` 1.10 (LTS). `patter` does not currently support `Julia` 1.11. 
+`Julia` 1.10 (LTS) is recommended. A download link is [here](https://julialang.org/downloads/#long_term_support_release) or you can use [`juliaup`](https://github.com/JuliaLang/juliaup). patter` does not currently support `Julia` 1.11. Follow the [README](https://github.com/edwardlavender/patter) instructions for further guidance. 
 :::
 
 ## Project set up {.smaller}
 
 1.  (optional) Set up an RStudio project
-2.  (optional) Initiate local-dependency management with `renv`
+2.  (optional) Initiate local-dependency management with `renv` (use `renv::init()`)
 3.  (optional) Build project directories (`data/`, `data-raw/`, `R/`, **`Julia/`**, ...)
-4.  Install `patter`
+4.  Install, load & attach `patter` (as explained previously)
 5.  (optional) Set `Julia` options (next slide)
-6.  Connect to `Julia`
+6.  Connect to `Julia` (via `julia_connect()`)
 
 ::: callout-note
 `renv` is an `R` package that implements local-dependency management. In `Julia`, we get this 'for free'. In `patter`, set `JULIA_PROJ` to use a local package environment for the `Julia` dependencies (recommended).
@@ -323,6 +324,8 @@ op <- options(terra.pal = rev(grDevices::terrain.colors(256L)))
 -   Connect to `Julia`:
 
 ```{r}
+# Connect to Julia
+# (Specify `JULIA_PROJ` and `JULIA_NUM_THREADS` in .Rprofile)
 julia_connect()
 ```
 
@@ -600,7 +603,7 @@ expr <- expression({
 
 -   Visualise the components of our movement model:
 
-```{r, echo = FALSE}
+```{r}
 eval(expr)
 ```
 
@@ -772,7 +775,7 @@ arc <-
   as.data.table()
 ```
 
-## Observation model(s)
+## Observation model(s) {.smaller}
 
 -   It is a good idea to pass other datasets through the `assemble_archival()` function for processing/checks though
 
@@ -905,13 +908,15 @@ In `Julia`, the list of observations is translated into a hash table of `ModelOb
     5.  Observations/observation model parameters/observation model sub-types
 -   We are now in a position to run the particle filter!
 
-## Particle filter {.smaller}
+## Particle filter
 
 -   At $t = 1$:
 
     1.  Sample initial particles (locations → `State`s), via `simulate_states_init()`
     2.  For each simulated particle, compute the (log) weight, via `Patter.logpdf_obs()`
     3.  Record a subset of `.n_record` resampled (equally weighted) particles in memory 
+
+## Particle filter {.smaller}
 
 -   For $t \in 2, ..., T$
 
@@ -1517,8 +1522,8 @@ head(moorings)
 state      <- "StateXY"
 mobility   <- 500.0
 model_move <- 
-  move_xy(dbn_length = "truncated(Normal(50, 250.0), lower = 0, upper = {mobility})", 
-                      dbn_angle = "VonMises(0, 0.25)")
+  move_xy(dbn_length = glue("truncated(Normal(50, 250.0), lower = 0, upper = {mobility})"), 
+          dbn_angle = "VonMises(0, 0.25)")
 
 # Simulate path using movement model 
 pp <- par(mfrow = c(1, 2))
@@ -1529,7 +1534,11 @@ path_coord <- sim_path_walk(.map = map,
                             .model_move = model_move)
 
 # Fit UD using cross validation
-path_ud <- map_dens(.map = map, .coord = path_coord, .discretise = TRUE)$ud
+path_ud <- map_dens(.map = map, 
+                    .coord = path_coord, 
+                    .discretise = TRUE,
+                    .fterra = TRUE, 
+                    sigma = bw.diggle)$ud
 par(pp)
 ```
 
@@ -2189,7 +2198,7 @@ See the [`patter-eval`](https://github.com/edwardlavender/patter-eval/blob/main/
 The `file_*()` helpers (e.g., `file_size()`) are useful wrappers for interacting with the file system. 
 :::
 
-# Development
+# Development {.smaller}
 
 1.  **Package deployment on linux and HPC linux environments**
 
