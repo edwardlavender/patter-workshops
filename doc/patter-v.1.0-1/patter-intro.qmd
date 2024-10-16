@@ -44,9 +44,9 @@ knitr:
 -   We will focus on **how** to use the package
 -   There will be:
     -   Interactive presentation & questions
-    -   (Time allowing) Optional practical activity (using example datasets or your own)
+    -   Optional practical activity (using example datasets or your own)
 
-## Questionaire
+## Questionnaire
 
 -   Experience with animal-tracking?
 -   Experience with `R` and `Julia`?
@@ -166,7 +166,7 @@ There are some special considerations for running `patter` on linux that we won'
     -   Install [`patter`](https://github.com/edwardlavender/Patter) (and let it handle `Julia` dependencies)
 
 ::: callout-important
-`Julia` 1.10 (LTS) is recommended. A download link is [here](https://julialang.org/downloads/#long_term_support_release) or you can use [`juliaup`](https://github.com/JuliaLang/juliaup). patter` does not currently support `Julia` 1.11. Follow the [README](https://github.com/edwardlavender/patter) instructions for further guidance. 
+`Julia` 1.10 (LTS) is recommended. A download link is [here](https://julialang.org/downloads/#long_term_support_release) or you can use [`juliaup`](https://github.com/JuliaLang/juliaup). `patter` does _not_ currently support `Julia` 1.11. Follow the [README](https://github.com/edwardlavender/patter) instructions for further guidance. 
 :::
 
 ## Project set up {.smaller}
@@ -194,7 +194,7 @@ There are some special considerations for running `patter` on linux that we won'
 -   (optional) `JULIA_NUM_THREADS` is the number of threads.
 
 ::: callout-important
-On Windows, `JULIA_NUM_THREADS` must be set system-wide as an environment variable. Follow the guidance here: <https://github.com/edwardlavender/patter/issues/13>.
+On Windows, `JULIA_NUM_THREADS` must be set system-wide as an environment variable. Follow the guidance [here](https://github.com/edwardlavender/patter/issues/11#issuecomment-2259962600).
 :::
 
 ## Project set up: `JULIA` options {.scrollable}
