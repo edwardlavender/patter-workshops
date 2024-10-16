@@ -22,6 +22,9 @@
 #### Wipe workspace
 rm(list = ls())
 
+#### Set options e.g. map colour palette
+op <- options(terra.pal = rev(grDevices::terrain.colors(256L)))
+
 #### Essential packages
 library(data.table)
 library(dtplyr)
