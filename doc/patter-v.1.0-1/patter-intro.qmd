@@ -22,6 +22,10 @@ knitr:
 
 ## Introduction
 
+![<https://github.com/edwardlavender/patter-workshops>](../../fig/patter-workshops.png)
+
+## Introduction
+
 ::: {layout="[1,1]"}
 -   `patter` is a `R` package in the movement-ecology ecosystem
 -   `patter` was motivated by our research in passive acoustic telemetry systems
@@ -48,6 +52,7 @@ knitr:
 
 ## Questionnaire
 
+-   Who has managed to install `patter` and connect it to `Julia`?
 -   Experience with animal-tracking?
 -   Experience with `R` and `Julia`?
 -   Experience with statistical modelling, including SSMs?
@@ -58,7 +63,7 @@ knitr:
 
 -   There are many packages for animal tracking (Joo et al. 2020)
 -   Numerous packages are available for passive acoustic telemetry (`VTrack`, `glatos`, `RSP`, etc.)
--   `patter` is a unique addition that fits SSMs to animal-tracking data using **particle and smoothing algorithms**
+-   `patter` is a unique addition that fits SSMs to animal-tracking data using **particle and smoothing algorithms** 
 -   `patter` can incorporate a wide range of data types
 
 ::: callout-important
@@ -131,20 +136,51 @@ $$f(\mathbf{s}_{1:T} \mid \mathbf{y}_{1:T}) \propto f(\mathbf{s}_{1:T}) f(\mathb
 
 ## Methodology
 
-![Inference using particle algorithms](../../fig/ssm-inference.png)
+![A particle filtering algorithm](../../fig/particle-filter.png)
 
-## Methodology
+## Methodology 
 
-![Particle filter intuition](../../fig/particle-filter.png)
+![Particles are like grains of sand](../../fig/particles-as-sand.png)
 
 ## Methodology
 
 -   Particle smoothers reweight particles from the filter to approximate $f(\mathbf{s}_{t} \mid \mathbf{y}_{1:T})$
--   The two-filter smoother consists of a re-weighting of particles from a forward filter run and a backward filter run based on the probability density of movements between pairs of locations.
+-   The **two-filter smoother** consists of a re-weighting of particles from a forward filter run and a backward filter run based on the probability density of movements between pairs of locations
 
 ## Methodology
 
-![The two filter smoother](../../fig/particle-smoother.png)
+![The two filter smoothing algorithm](../../fig/particle-smoother.png)
+
+## Methodology
+
+![Smoothing is like pruning](../../fig/smoothing-and-pruning.png)
+
+# Outputs
+
+## Why should I use `patter`? 
+
+-  `patter` gives us **a probabilistic representation of the possible locations of an individual though time that incorporates our ecological knowledge and all the data that we collect**
+
+## Why should I use `patter`?
+
+  - Refined maps of **space use**:
+      - with a proper biological and statistical interpretation
+      - which outperform those from heuristic models across the board
+  - Refined estimates of **residency**:
+      - At time-scales of interest (e.g., daily, weekly, yearly residency)
+  - Refined **downstream analyses** (e.g., habitat preferences) that can incorporate uncertainty in the individual's location through time
+      
+## Why should I use `patter`? 
+
+![`patter` produces refined maps of space use](../../fig/patter-maps.png)
+
+## Why should I use `patter`? 
+
+![`patter` consistently outperforms heuristic methods](../../fig/patter-me.png)
+
+## Why should I use `patter`?
+
+![`patter` produces refined estimates of residency](../../fig/patter-residency.png)
 
 # Set up
 
@@ -269,7 +305,7 @@ julia_connect()
 For a summary of the workflow, see `vignette("b-workflow-outline", package = "patter")`. See the [README](https://github.com/edwardlavender/patter) for an example workflow. `patter` functions are well documented. Please read them carefully and follow the links to the `Patter.jl` documentation where directed. Help us to improve the documentation by submitting [GitHub issues](https://github.com/edwardlavender/patter/issues).
 :::
 
-## Workflow {.smaller}
+## Workflow
 
 -   `patter` is easy: 
     1. Define the state type and the movement model
@@ -279,6 +315,8 @@ For a summary of the workflow, see `vignette("b-workflow-outline", package = "pa
     5. Run the particle smoother
     6. Analyse the results! 
     
+## Workflow
+
 -   The challenge is to formulate biologically sensible movement and observation models 
 -   The code is just boilerplate: copy & paste and edit as required! 
 -   Please reach out on [GitHub](https://github.com/edwardlavender/patter/issues) with queries
@@ -342,6 +380,13 @@ set_seed(2024)
 -   This first part of this presentation walks though how to reconstruct movements and patterns of space use using example data collected from flapper (*Dipturus intermedius*) in Scotland.
 
 ![The Loch Sunart to the Sound of Jura Marine Protected Area](../../fig/mefs-project.png)
+
+## Study systems
+
+-   **Read** observations
+-   Define **map** of study system
+-   Define **timeline** of interest
+-   **Assemble** observations
 
 ## Study system
 
@@ -486,6 +531,16 @@ str(timeline)
 ::: callout-tip
 Depending on the time step, it is generally wise to split the time series into chunks (e.g., one-month in duration) and run the algorithms for each chunk. Running the algorithms over prolonged periods increases the chances of convergence failure and may exhaust available memory. Here, we use a short, bespoke timeline for example speed only. 
 :::
+
+## Structures
+
+-   We have defined our study system (map, timeline, observations)
+
+-   To use this information to reconstruct individual's movements, our next step is to define the components (structures) of our model:
+
+    -   State
+    -   Movement model
+    -   Observation model(s)
 
 ## State
 
@@ -806,11 +861,13 @@ head(arc)
 It is straightforward to define new `ModelObs` sub-types for new data types; see `?ModelObs` (or submit a [GitHub issue](https://github.com/edwardlavender/patter/issues)).
 :::
 
-## Observation model(s) {.smaller}
+## Observation model(s)
 
 -   `ModelObsAcousticLogisTrunc` is designed for acoustic observations
 -   The structure holds the parameters of truncated logistic detection probability model
 -   This contains the fields we need to simulate an observation, or evaluate the log-probability of an observation, given a transmission from a particular location
+
+## Observation model(s)
 
 ```{julia, eval = FALSE}
 # Julia code for the ModelObsAcousticLogisTrunc sub-type
@@ -867,7 +924,7 @@ eval(expr)
 
 ## Observation model(s)
 
-![Example truncated logistic detection probability models](../../fig/flapper-ModelObsDepthNormalTrunc.png)
+![Example truncated normal depth observation models](../../fig/flapper-ModelObsDepthNormalTrunc.png)
 
 ## Observation model(s)
 
@@ -1034,7 +1091,7 @@ In `patter@dev`, `.xinit` is gone and `trials` is added.
 -   `states` is a `data.table` of particles:
 
 ```{r}
-head(fwd$states)
+head(arrange(fwd$states, timestep))
 ```
 
 ::: callout-warning
@@ -1218,7 +1275,7 @@ summary(smo)
 -   We can analyse the outputs in the same way as those from the filter:
 
 ```{r}
-head(smo$states)
+head(arrange(smo$states, timestep))
 ```
 
 ## Two-filter smoother
@@ -1489,8 +1546,7 @@ moorings <- sim_array(.map = map,
                       .receiver_alpha = 5, 
                       .receiver_beta = -0.01, 
                       .receiver_gamma = 1200, 
-                      .n_array = 1L, 
-                      .plot = TRUE)
+                      .n_array = 1L)
 ```
 
 ## Simulate arrays
@@ -1853,7 +1909,7 @@ struct StateXYZ <: Patter.State
 end
 ```
 
-## Custom workflow  
+## Custom workflow {.smaller}
 
 -   (optional) Define a function to convert initial coordinates to the state
 -   Here, we simply have to add initial depth values
@@ -1897,7 +1953,7 @@ end
 In `patter@dev`, a `mobility` field is also required.
 :::
 
-## Custom workflow  
+## Custom workflow {.scrollable}
 
 -   Define a function to simulate new states using the movement model
 -   This is necessary for `sim_path_walk()` and `pf_filter()`
@@ -1946,7 +2002,7 @@ end
 
 ## Custom workflow  
 
--   (optional) Write an R wrapper to conveniently trial different parametrisations from `R`:
+-   (optional) Write an `R` wrapper to conveniently trial different parametrisations from `R`:
 
 ```{r}
 # R code 
@@ -1959,8 +2015,8 @@ move_xyz <- function(length = "truncated(Gamma(1.0, 750.0), upper = 750.0)",
 
 ## Custom workflow  
 
--   Now we'll define a custom observation model for our pelagic species
--   We imagine we have depth observations
+-   Now we'll define a custom observation model
+-   We imagine we have depth observations for a pelagic species
 
 ```{julia}
 # Julia code 
@@ -2154,7 +2210,7 @@ par(pp)
 
 -   Here is some pseudocode to set up a socket cluster
 -   This approach is not generally recommended
--   On `MacOS`, you may require `hide-progress` `Patter.jl` branch
+-   On `MacOS`, you may require the `hide-progress` `Patter.jl` branch
 
 ```{r, eval = FALSE}
 # Initialise Julia
