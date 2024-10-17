@@ -134,13 +134,13 @@ $$f(\mathbf{s}_{1:T} \mid \mathbf{y}_{1:T}) \propto f(\mathbf{s}_{1:T}) f(\mathb
 
 5. The particle smoother approximates the full marginal distribution $f(\mathbf{s}_t \mid \mathbf{y}_{1:T})$
 
-## Methodology
-
-![A particle filtering algorithm](../../fig/particle-filter.png)
-
 ## Methodology 
 
 ![Particles are like grains of sand](../../fig/particles-as-sand.png)
+
+## Methodology
+
+![A particle filtering algorithm](../../fig/particle-filter.png)
 
 ## Methodology
 
