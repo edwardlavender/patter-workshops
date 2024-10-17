@@ -89,7 +89,7 @@ state      <- "StateXY"
 # In our case, this needs to account for movement capacity, current speed etc.
 mobility   <- 1100
 model_move <-
-  move_xy(dbn_length = glue("truncated(Gamma(1, 250.0), upper = {mobility})"),
+  move_xy(dbn_length = glue("truncated(Gamma(1.0, 250.0), upper = {mobility})"),
           dbn_angle = "Uniform(-pi, pi)")
 
 #### Visualise movement model
@@ -162,8 +162,8 @@ arc <- assemble_archival(.timeline = timeline,
                          .archival =
                            arc |>
                            rename(obs = depth) |>
-                           mutate(depth_sigma = 100,
-                                  depth_deep_eps = 100))
+                           mutate(depth_sigma = 75,
+                                  depth_deep_eps = 150))
 
 #### Collect observations
 yobs <- list(ModelObsAcousticLogisTrunc = acc,
@@ -195,6 +195,7 @@ arc_tmp1
 #### Model inference
 
 #### Run forward filter (~12 s)
+set_seed()
 fwd <- pf_filter(.map = map,
                  .timeline = timeline,
                  .state = state,
@@ -202,7 +203,10 @@ fwd <- pf_filter(.map = map,
                  .yobs = yobs,
                  .model_obs = names(yobs),
                  .model_move = model_move,
-                 .n_particle = 1e5L)
+                 .n_particle = 2e4L)
+if (!fwd$convergence) {
+  warning("The filter failed to converge!")
+}
 
 # (optional) Tasks
 # * How would you set the initial location in the filter?
@@ -219,7 +223,8 @@ fwd <- pf_filter(.map = map,
 # * If we write the outputs from `fwd` to file, how much storage space do we need?
 # * What does that tell us about the storage requirements of a full-scale analysis?
 
-#### Run backward information filter (~12 s)
+#### Run backward information filter (~23 s)
+set_seed()
 bwd <- pf_filter(.map = map,
                  .timeline = timeline,
                  .state = state,
@@ -227,21 +232,27 @@ bwd <- pf_filter(.map = map,
                  .yobs = yobs,
                  .model_obs = names(yobs),
                  .model_move = model_move,
-                 .n_particle = 1e5L,
+                 .n_particle = 2e5L,
                  .direction = "backward")
+if (!bwd$convergence) {
+  warning("The filter failed to converge!")
+}
 
 # (optional) Tasks
-# * How do the convergence properties of the forward filter differ from the backward filter?
-# * Why do you think there are differences in this case?
-# * How might you solve them?
+# * Do convergence properties of the forward filter differ from the backward filter in this case?
+# * Why do we need so many particles for the backward run in this case?
+# * (hint: plot the data)
+# * How might you solve these challenges?
 
 #### Run two-filter smoother (~1 s)
+set_seed()
 smo <- pf_smoother_two_filter(.n_particle = 100L)
 
 # (optional) tasks
 # * Repeat the tasks from the filter to examine the behaviour of the smoother
 # * How does computation time change if you change .n_particle?
 # * How does this differ from the filter? Why?
+# * Is .n_particle = 100 satisfactory here?
 # * How repeatable are multiple runs of the particle filter/smoother?
 
 #### Map utilisation distribution with/without kernel smoothing (~1 s)
