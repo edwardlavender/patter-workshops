@@ -355,6 +355,7 @@ op <- options(patter.verbose = FALSE)
 ```{r, echo = FALSE}
 # Additional settings
 op <- options(terra.pal = rev(grDevices::terrain.colors(256L)))
+pp <- par(cex.lab = 2, cex.axis = 2)
 ```
 
 ## Boilerplate setup
@@ -381,7 +382,7 @@ set_seed(2024)
 
 ![The Loch Sunart to the Sound of Jura Marine Protected Area](../../fig/mefs-project.png)
 
-## Study systems
+## Study system
 
 -   **Read** observations
 -   Define **map** of study system
@@ -466,7 +467,7 @@ We use a coarse raster for convenience only. For a real analysis, a better map w
 terra::plot(dat_gebco())
 ```
 
-## Study system {.smaller}
+## Study system
 
 -   The map is a **raster** that sets the spatial domain of our analyses and defines the region(s) within which movements are possible
 
@@ -481,6 +482,8 @@ map <- dat_gebco()
 # Export SpatRaster as `env` to Julia
 set_map(map)
 ```
+
+## Study system
 
 ::: callout-note
 In `patter v.1.0.0`, in the particle filtering routines, initial particles are sampled in `R` from a `SpatRaster`, which can differ from the map (`env`) in `Julia`. In `patter@dev`, initial particles are sampled in `Julia` and `set_map()` includes `.as_Raster` and `.as_GeoArrays` arguments if you need to distinguish the two maps. Use `.as_Raster = TRUE` to define the initial map from which particles are sampled. Use `.as_GeoArrays = TRUE` to define the map for the movement model.
@@ -1127,7 +1130,7 @@ pf_plot_xy(.map = map, .coord = fwd$states, .steps = 1L,
 -   We can visualise the probability distribution for the individual's initial location as the proportion of particles in each grid cell:
 
 ```{r, eval = FALSE}
-map_pou(.map = map, .coord = fwd$states)
+map_pou(.map = map, .coord = fwd$states[timestep == 1L, ])
 ```
 
 ::: callout-note
@@ -1141,7 +1144,7 @@ Recall that particles are equally weighted at this point thanks to resampling.
 # Particle filter
 
 ```{r, echo = FALSE}
-map_pou(.map = map, .coord = fwd$states) |> invisible()
+map_pou(.map = map, .coord = fwd$states[timestep == 1L, ]) |> invisible()
 ```
 
 # Particle filter
@@ -1438,7 +1441,7 @@ set_seed()
 
 # Set map 
 map <- dat_gebco()
-set_map()
+set_map(map)
 
 # Study timeline 
 timeline <- assemble_timeline(.datasets = list(det, arc))
