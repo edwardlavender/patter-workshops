@@ -34,7 +34,7 @@ systems.</figcaption>
 
 # Dependencies
 
-The project was built in [R](https://www.r-project.org/) (version 4.4.1)
+The project was built in [R](https://www.r-project.org/) (version 4.4.3)
 in [RStudio](https://www.rstudio.com/).
 
 # Resources
@@ -43,13 +43,17 @@ For `patter` users, these are the most relevant resources:
 
 1.  **`doc/`** contains workshop documentation:
 
-    - **`patter-v.1.0-1/patter-intro.html` is a comprehensive
-      introductory presentation for `patter`**
-      - Download this file for a comprehensive introduction to `patter`
+    - `patter-v.1.0-1/patter-intro.html` is an introductory presentation
+      for `patter v.1.0-1`
+    - **`patter-v.2.0-0/patter-intro.html` is an introductory
+      presentation for `patter v.2.0-0`**
+      - Download this file and open it in a web browser for a
+        comprehensive introduction to the package
 
 2.  **`R/`** contains `R` scripts (workshop exercises):
 
-    - **`intro-patter.R` is an introductory exercise for `patter`**
+    - **`intro-patter.R` is an introductory exercise for
+      `patter v.2.0-1`**
       - Download this file for a practical introduction to the basic
         `patter` workflow
 

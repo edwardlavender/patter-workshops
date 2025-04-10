@@ -30,6 +30,11 @@ if (!requireNamespace("markdown", quietly = TRUE))
   renv::install("markdown", prompt = FALSE)
 if (!requireNamespace("rmarkdown", quietly = TRUE))
   renv::install("rmarkdown", prompt = FALSE)
+if (!requireNamespace("stringi", quietly = TRUE))
+  renv::install("stringi", prompt = FALSE)
+if (!requireNamespace("stringr", quietly = TRUE))
+  renv::install("stringr", prompt = FALSE)
+
 if (!requireNamespace("yaml", quietly = TRUE))
   renv::install("yaml", prompt = FALSE)
 # Geospatial packages

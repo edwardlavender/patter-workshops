@@ -7,7 +7,7 @@
 
 #### Prerequisites
 # (1) This code runs on Windows/MacOS
-# (patter@dev can run on linux, with modifications to this workflow)
+# Modifications to the workflow can be required to run R/Julia on Linux
 
 #### Issues
 # Please report questions or issues on GitHub:
@@ -39,7 +39,7 @@ library(spatstat.explore)
 # * These data are from flapper skate (_Dipturus intermedius_)
 map        <- dat_gebco()
 moorings   <- copy(dat_moorings)
-detections <- copy(dat_acoustics)
+detections <- copy(dat_detections)
 archival   <- copy(dat_archival)
 
 #### Julia set up (~5 s after first run!)
@@ -70,8 +70,9 @@ set_map(map)
 #### Define study timeline
 # We focus on a short period for this example
 # The resolution of the timeline defines the resolution of the simulation
-timeline <- seq(as.POSIXct("2016-03-26", tz = "UTC"),
-                length.out = 1000, by = "2 mins")
+timeline <- seq(as.POSIXct("2016-03-26 00:00:00", tz = "UTC"),
+                as.POSIXct("2016-03-27 09:18:00", tz = "UTC"),
+                by = "2 mins")
 # Reduce the timeline if your computer struggles!
 # timeline <- timeline[1:500]
 timespan <- lubridate::interval(min(timeline), max(timeline))
@@ -84,15 +85,20 @@ timespan <- lubridate::interval(min(timeline), max(timeline))
 state      <- "StateXY"
 
 #### Define movement model
-# This is a simple movement model for illustrative purposes
-# `mobility` is the _maximum_ distance travelled between between two time steps
-# In our case, this needs to account for movement capacity, current speed etc.
+# This is a simple movement model for illustrative purposes based on:
+# * A distribution of step lengths, truncated by mobility;
+# * `mobility` is the _maximum_ distance travelled between between two time steps;
+# * A distribution of headings;
 mobility   <- 1100
 model_move <-
-  move_xy(dbn_length = glue("truncated(Gamma(1.0, 250.0), upper = {mobility})"),
-          dbn_angle = "Uniform(-pi, pi)")
+  model_move_xy(.mobility = mobility,
+                .dbn_length = glue("truncated(Gamma(1.0, 250.0), upper = {mobility})"),
+                .dbn_heading = "Uniform(-pi, pi)")
 
 #### Visualise movement model
+# Plot movement model components
+plot(model_move)
+# Visualise realisations of the movement model
 sim_path_walk(.map = map,
               .timeline = timeline,
               .state = state,
@@ -105,8 +111,8 @@ sim_path_walk(.map = map,
 # * Why doesn't the movement model ever jump on land?
 # * Can the simulated individual leave the study area?
 # * What happens if you set:
-# *     dbn_angle = VonMises(0.0, 0.25)?
-# *     dbn_angle = VonMises(0.0, 1.0)? (Be prepared to kill R!) Why?
+# *     dbn_heading = VonMises(0.0, 0.25)?
+# *     dbn_heading = VonMises(0.0, 1.0)? Why?
 # * Can you formulate a suitable model for one of your study species?
 # * Can you visualise how distinct movement models differ?
 
@@ -139,7 +145,7 @@ arc <-
   as.data.table()
 # (optional) Validate acoustic/archival datasets
 datalist <- pat_setup_data(.map = map,
-                           .acoustics = det,
+                           .detections = det,
                            .moorings = moorings,
                            .services = NULL,
                            .archival = arc)
@@ -150,7 +156,7 @@ datalist <- pat_setup_data(.map = map,
 # * We revise the detection range currently recorded in the dataset
 moorings[, receiver_gamma := 1750]
 acc <- assemble_acoustics(.timeline = timeline,
-                          .acoustics = det,
+                          .detections = det,
                           .moorings = moorings)
 
 #### Assemble archival observations
@@ -165,20 +171,29 @@ arc <- assemble_archival(.timeline = timeline,
                            mutate(depth_sigma = 75,
                                   depth_deep_eps = 150))
 
+#### Plot observation models
+# The first ModelObsAcousticLogisTrunc observation model
+plot(model_obs_acoustic_logis_trunc(acc[1, ]))
+# The first ModelObsDepthNormalTrunc observation model
+plot(model_obs_depth_normal_trunc_seabed(arc[1, ]), .seabed = 50)
+abline(v = 50, lty = 3)
+
 #### Collect observations
 yobs <- list(ModelObsAcousticLogisTrunc = acc,
-             ModelObsDepthNormalTrunc = arc)
+             ModelObsDepthNormalTruncSeabed = arc)
 
 # (Optional) tasks
-# * Plot the observation models
 # * Plot the observed time series
+# * Manually plot the observation model
+# * Do you understand how we have specified observation model parameters here?
 # * How would you assemble another kind of dataset? (Hint, see `?assemble`)
 # * Can you assemble your own datasets for the particle filter?
 # * Where can you find out more about the built-in `ModelObs` structures?
 # * How would you implement another `ModelObs` structure?
-# * Can you implement the `ModelObsDepthUniform` structure for these data?
+# * Can you implement the `ModelObsContainer` structure for these data?
+# * Can you implement the `ModelObsDepthUniformSeabed` structure for these data?
 
-# (optional) additional tasks
+# (optional) Additional tasks
 # * Are you familiar with the `data.table` package in R?
 # - `patter` functions use `data.table`s instead of `data.frame`s
 # - In fact, the code above that looks like dplyr, is `data.table` at the back
@@ -194,17 +209,14 @@ arc_tmp1
 ###########################
 #### Model inference
 
-#### Run forward filter (~12 s)
-set_seed()
-fwd <- pf_filter(.map = map,
-                 .timeline = timeline,
+#### Run forward filter (~2 s)
+fwd <- pf_filter(.timeline = timeline,
                  .state = state,
-                 .xinit = NULL, .xinit_pars = list(mobility = mobility),
+                 .xinit = NULL,
                  .yobs = yobs,
-                 .model_obs = names(yobs),
                  .model_move = model_move,
                  .n_particle = 2e4L)
-if (!fwd$convergence) {
+if (!fwd$callstats$convergence) {
   warning("The filter failed to converge!")
 }
 
@@ -213,8 +225,9 @@ if (!fwd$convergence) {
 # * What happens if you set an initial location?
 # * How does computation time change in the filter if you change the timeline or .n_particle?
 # * What happens if you change other arguments, such as .n_record?
+# * Do you understand the object returned by `pf_filter()` (hint: see `?`pf_particles-class``)
 # * How can we plot the probability distribution for an individual's location at a selected timestep?
-# * What about creating an animation of particle movement (hint: see ?`pf_plot_xy()`)?
+# * What about creating an animation of particle movement (hint: see ?`plot_xyt()`)?
 # * What checks would you do to check `pf_filter()` has worked as expected?
 # * At the moment of detection, how far are particles from receivers? Why?
 # * How would you analyse filter diagnostics (hint: see `fwd$diagnostics`)?
@@ -222,19 +235,16 @@ if (!fwd$convergence) {
 # * How could we improve filter diagnostics?
 # * If we write the outputs from `fwd` to file, how much storage space do we need?
 # * What does that tell us about the storage requirements of a full-scale analysis?
+# * How would you use the `.batch` argument to handle memory requirements?
 
 #### Run backward information filter (~23 s)
-set_seed()
-bwd <- pf_filter(.map = map,
-                 .timeline = timeline,
+bwd <- pf_filter(.timeline = timeline,
                  .state = state,
-                 .xinit = NULL, .xinit_pars = list(mobility = mobility),
                  .yobs = yobs,
-                 .model_obs = names(yobs),
                  .model_move = model_move,
                  .n_particle = 2e5L,
                  .direction = "backward")
-if (!bwd$convergence) {
+if (!bwd$callstats$convergence) {
   warning("The filter failed to converge!")
 }
 
@@ -242,17 +252,25 @@ if (!bwd$convergence) {
 # * Do convergence properties of the forward filter differ from the backward filter in this case?
 # * Why do we need so many particles for the backward run in this case?
 # * (hint: plot the data)
-# * How might you solve these challenges?
+# * How might you solve these challenges (hint: see `?assemble_acoustics_containers`)?
 
 #### Run two-filter smoother (~1 s)
-set_seed()
-smo <- pf_smoother_two_filter(.n_particle = 100L)
+# (optional) For certain kinds of movement models we can set a 'validity map' in Julia
+# * This defines the region within which any movement is valid
+# * This speeds up the computation of normalisation constants for smoothing
+# * (which account for automatic truncation of the movement model by land)
+set_vmap(.map = map, .mobility = mobility, .plot = TRUE)
+# Run the smoother
+smo <- pf_smoother_two_filter(.n_particle = 500L)
 
 # (optional) tasks
+# * Do you get a warning, such as:
+# All smoothing weights (from xbwd[k, t] to xfwd[j, t - 1]) are zero at 200 time step(s) (20.0 %).
+# * How would you mitigate this warning?
 # * Repeat the tasks from the filter to examine the behaviour of the smoother
 # * How does computation time change if you change .n_particle?
 # * How does this differ from the filter? Why?
-# * Is .n_particle = 100 satisfactory here?
+# * Is .n_particle = 500L satisfactory here?
 # * How repeatable are multiple runs of the particle filter/smoother?
 
 #### Map utilisation distribution with/without kernel smoothing (~1 s)
@@ -262,7 +280,7 @@ ud_dens <- map_dens(.map = map,
                    .coord = smo$states,
                    .discretise = TRUE,
                    .fterra = TRUE,
-                   sigma = bw.diggle)
+                   .sigma = bw.diggle)
 par(pp)
 
 # (optional) tasks
@@ -316,7 +334,7 @@ path_ud <- map_dens(.map = map,
                     .coord = path_coord,
                     .discretise = TRUE,
                     .fterra = TRUE,
-                    sigma = bw.diggle)
+                    .sigma = bw.diggle)
 
 # (optional) tasks
 # * How are path coordinates handled differently than particles in `map_dens()`?
@@ -327,27 +345,42 @@ path_ud <- map_dens(.map = map,
 
 #### Define sensor parameters for the `ModelObsAcousticLogisTrunc` struct
 # In this example, we use the real receiver positions
-pars_ModelObsAcousticLogisTrunc <-
-  moorings |>
-  select(sensor_id = "receiver_id",
-         "receiver_x", "receiver_y",
-         "receiver_alpha", "receiver_beta", "receiver_gamma") |>
-  as.data.table()
+pars_ModelObsAcousticLogisTrunc <- model_obs_acoustic_logis_trunc(moorings)
+# In long form, this is basically:
+list(
+  ModelObsAcousticLogisTrunc =
+    moorings |>
+    select(sensor_id = "receiver_id",
+           "receiver_x", "receiver_y",
+           "receiver_alpha", "receiver_beta", "receiver_gamma") |>
+    as.data.table()
+)
+# Plot the observation model(s)
+plot(pars_ModelObsAcousticLogisTrunc)
 
-#### Define sensor parameters for the `ModelObsDepthNormalTrunc` struct
-pars_ModelObsDepthNormalTrunc <-
+#### Define sensor parameters for the `ModelObsDepthNormalTruncSeabed` struct
+pars_ModelObsDepthNormalTruncSeabed <- model_obs_depth_normal_trunc_seabed(
   data.table(sensor_id = 1L,
              depth_sigma = 100,
              depth_deep_eps = 100)
+)
+# This is basically:
+list(
+  ModelObsDepthNormalTruncSeabed =
+  data.table(sensor_id = 1L,
+             depth_sigma = 100,
+             depth_deep_eps = 100)
+)
+# Plot the observation model(s)
+plot(pars_ModelObsDepthNormalTruncSeabed)
 
 #### Collect sensor parameters for each data type
-pars_ModelObs <- list(ModelObsAcousticLogisTrunc = pars_ModelObsAcousticLogisTrunc,
-                      ModelObsDepthNormalTrunc = pars_ModelObsDepthNormalTrunc)
+pars_ModelObs <- c(pars_ModelObsAcousticLogisTrunc,
+                   pars_ModelObsDepthNormalTruncSeabed)
 
 #### Simulate observations
 obs <- sim_observations(.timeline = timeline,
-                        .model_obs = names(pars_ModelObs),
-                        .model_obs_pars = pars_ModelObs)
+                        .model_obs = pars_ModelObs)
 
 # (optional) tasks
 # * Why is the `sensor_id` field included in all `ModelObs` structures?
