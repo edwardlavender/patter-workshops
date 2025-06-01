@@ -154,7 +154,7 @@ datalist <- pat_setup_data(.map = map,
 # Assemble a timeline of acoustic observations (0, 1) and model parameters
 # * We include ModelObsAcousticLogisTrunc model parameters via `.moorings`
 # * We revise the detection range currently recorded in the dataset
-moorings[, receiver_gamma := 1750]
+moorings[, receiver_gamma := 3000]
 acc <- assemble_acoustics(.timeline = timeline,
                           .detections = det,
                           .moorings = moorings)
@@ -207,7 +207,7 @@ arc_tmp1
 
 
 ###########################
-#### Model inference
+#### Inference
 
 #### Run forward filter (~2 s)
 fwd <- pf_filter(.timeline = timeline,
@@ -395,7 +395,7 @@ obs <- sim_observations(.timeline = timeline,
 
 
 ###########################
-#### Model inference
+#### Inference
 
 # (optional) tasks
 # * Can you implement the filter and smoother using simulated data?
