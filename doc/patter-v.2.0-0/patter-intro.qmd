@@ -116,7 +116,7 @@ Let us know if there are routines in `flapper` that you'd like to see in `patter
 
 ## Evolution
 
--   `patter` focuses specifically on **model inference** for SSMs using **particle algorithms**
+-   `patter` focuses specifically on **inference** for SSMs using **particle algorithms**
 
 ![<https://github.com/edwardlavender/patter>](../../fig/ssm-inference.png)
 
@@ -156,7 +156,7 @@ $$f(\mathbf{s}_{1:T} \mid \mathbf{y}_{1:T}) \propto f(\mathbf{s}_{1:T}) f(\mathb
 
 ## Methodology
 
-3. Model inference for the latent states is performed using particle filtering and smoothing
+3. Inference for the latent states is performed using particle filtering and smoothing
 
 4. The particle filter approximates the partial marginal distribution $f(\mathbf{s}_t \mid \mathbf{y}_{1:t})$ using a set of weighted samples called 'particles'
 
