@@ -1,6 +1,10 @@
 source("renv/activate.R")
 
-Sys.setenv(JULIA_PROJ = "./Julia")
+if (!requireNamespace("here", quietly = TRUE)) {
+  renv::install("here", prompt = FALSE)
+}
+
+Sys.setenv(JULIA_PROJ = here::here("Julia"))
 
 Sys.setenv(JULIA_NUM_THREADS = parallel::detectCores())
 
