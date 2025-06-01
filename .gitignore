@@ -2,19 +2,19 @@
 .Rhistory
 .RData
 .Ruserdata
-
-fig/*
-!fig/particle-maps.png
-
 *.log
 *.tex
 *_files
 *.rmarkdown
-temporary*
-deprecated
 
+temporary*
 patter-method*
 *patter-intro-advanced.R
+
+deprecated
+doc/proposals/
+fig/*
+!fig/particle-maps.png
 
 R/patter-intro-supp.R
 
