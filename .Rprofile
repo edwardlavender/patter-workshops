@@ -1,4 +1,5 @@
 source("renv/activate.R")
+options(repos = c(CRAN = "https://cloud.r-project.org"))
 
 if (!requireNamespace("here", quietly = TRUE)) {
   renv::install("here", prompt = FALSE)
