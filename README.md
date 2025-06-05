@@ -34,7 +34,7 @@ systems.</figcaption>
 
 # Dependencies
 
-The project was built in [R](https://www.r-project.org/) (version 4.4.3)
+The project was built in [R](https://www.r-project.org/) (version 4.5.0)
 in [RStudio](https://www.rstudio.com/).
 
 # Resources
@@ -43,9 +43,10 @@ For `patter` users, these are the most relevant resources:
 
 1.  **`doc/`** contains workshop documentation:
 
-    - `patter-v.1.0-1/patter-intro.html` is an introductory presentation
-      for `patter v.1.0-1`
-    - **`patter-v.2.0-0/patter-intro.html` is an introductory
+    - `context/context-v1.pdf` provides an introduction to state-space
+      modelling in acoustic telemetry systems
+    - `usage/` contains introductory presentations for `patter`
+    - **`usage/patter-v.2.0-0/patter-intro.html` is an introductory
       presentation for `patter v.2.0-0`**
       - Download this file and open it in a web browser for a
         comprehensive introduction to the package

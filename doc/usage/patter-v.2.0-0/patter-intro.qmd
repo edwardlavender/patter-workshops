@@ -1,0 +1,2494 @@
+---
+title: "An introduction to `patter`"
+author: 
+  - name: "Edward Lavender"
+    email: "edward.lavender@eawag.ch"
+    affiliation: "Eawag, Swiss Federal Institute for Aquatic Science and Technology"
+format: 
+  revealjs:
+    self-contained: true
+    slide-number: true
+knitr:
+  opts_chunk:
+    echo: true
+    eval: true
+---
+
+
+# Contents
+
+## Contents {.smaller}
+
+::: {layout="[1,1]"}
+
+* Introduction
+* Methodology & outputs
+* Set up
+* Workflow 
+    - Overview
+    - Boilerplate setup 
+    - An example with real data
+    - Simulation-based workflow 
+* Ancillary functions
+* Advanced topics
+* Development and help
+
+![](../../fig/logo.png)
+:::
+
+# Introduction
+
+## Introduction
+
+![<https://github.com/edwardlavender/patter>](../../fig/patter-github.png)
+
+## Introduction
+
+![<https://github.com/edwardlavender/patter-workshops>](../../fig/patter-workshops.png)
+
+## Introduction
+
+::: {layout="[1,1]"}
+-   `patter` is a `R` package in the movement-ecology ecosystem
+-   `patter` was motivated by our research in passive acoustic telemetry systems
+-   `patter` fits state-space models to animal-tracking data, using particle filtering and smoothing algorithms
+
+![](../../fig/motivation.png)
+:::
+
+## Team
+
+![](../../fig/acknowledgements-team.png)
+
+## Institutions
+
+![](../../fig/acknowledgements-institutions.png)
+
+## Workshop
+
+-   The goal today is to introduce `patter`
+-   We will focus on **how** to use the package
+-   There will be:
+    -   Interactive presentation & questions
+    -   Optional practical activity (using example datasets or your own)
+
+## Questionnaire
+
+-   Who has managed to install `patter` and connect it to `Julia`?
+-   Experience with animal-tracking?
+-   Experience with `R` and `Julia`?
+-   Experience with statistical modelling, including SSMs?
+-   Experience with Bayesian statistics?
+-   Experience with particle algorithms?
+
+## Context {.smaller}
+
+-   There are many packages for animal tracking (Joo et al., [2020](https://doi.org/10.1111/1365-2656.13116))
+-   Numerous packages are available for passive acoustic telemetry (`VTrack`, `glatos`, `RSP`, etc.)
+-   `patter` is a unique addition that fits SSMs to animal-tracking data using **particle and smoothing algorithms** 
+-   `patter` can incorporate a wide range of data types
+
+::: callout-important
+For passive acoustic telemetry, `patter` is the only package that reconstructs individual movements and patterns of space use within a coherent probabilistic framework.
+:::
+
+## Context
+
+-   `patter` uses a dedicated high-performance backend written in `Julia`
+
+![<https://github.com/edwardlavender/Patter.jl>](../../fig/Patter.jl-github.png)
+
+## Evolution
+
+-   `patter` evolved from `flapper` (Lavender et al., 2023) ![https://github.com/edwardlavender/flapper](../../fig/flapper-github.png)
+
+## Evolution
+
+-   `flapper` is a more general-purpose package for passive acoustic telemetry that supports:
+    -   data acquisition, simulation, assembly and processing
+    -   spatial operations and distance metrics (e.g., fast C++ LCP algorithms)
+    -   data exploration (detection statistics, movement metrics)
+    -   'flapper' algorithms
+
+::: callout-note
+Let us know if there are routines in `flapper` that you'd like to see in `patter`. 
+:::
+
+## Evolution
+
+-   `patter` focuses specifically on **inference** for SSMs using **particle algorithms**
+
+![<https://github.com/edwardlavender/patter>](../../fig/ssm-inference.png)
+
+# Methodology
+
+## Methodology {.smaller}
+
+-   **For the methodology**, see:
+
+Lavender, E. et al. ([2025a](https://doi.org/10.1111/2041-210X.70028)). Particle algorithms for animal movement modelling in receiver arrays. Meth. Ecol. Evol. <https://doi.org/10.1111/2041-210X.70028>
+
+-   **For the package**, see the package paper:
+
+Lavender, E. et al. ([2025b](https://doi.org/10.1111/2041-210X.70029)). `patter`: particle algorithms for animal tracking in R and Julia. Meth. Ecol. Evol. <https://doi.org/10.1111/2041-210X.70029>
+
+-   **For a case study**, see:
+
+Lavender, E. et al. (2025c). Animal tracking with particle algorithms for conservation. BioRxiv. <https://doi.org/10.1101/2025.02.13.638042>
+
+## Methodology {.smaller}
+
+-   **For a algorithmic explanation of the methodology** for mathematical and non-mathematical readers:
+
+Lavender, E. et al. ([2025a](https://doi.org/10.1111/2041-210X.70028)). Supporting Information.
+
+-   **For an intuitive summary**, see:
+
+`vignette("a-methodology", package = "patter")`
+
+## Methodology
+
+1. We formulate a Bayesian state-space model for the joint probability distribution $f(\mathbf{s}_{1:T} \mid \mathbf{y}_{1:T})$ of a tagged individual's possible trajectories from the start to the end of the time series
+
+2. The joint probability distribution is expressed in terms of a prior (the movement process) and a likelihood (the observation process)
+
+$$f(\mathbf{s}_{1:T} \mid \mathbf{y}_{1:T}) \propto f(\mathbf{s}_{1:T}) f(\mathbf{y}_{1:T} \mid \mathbf{s}_{1:T})$$
+
+## Methodology
+
+3. Inference for the latent states is performed using particle filtering and smoothing
+
+4. The particle filter approximates the partial marginal distribution $f(\mathbf{s}_t \mid \mathbf{y}_{1:t})$ using a set of weighted samples called 'particles'
+
+5. The particle smoother approximates the full marginal distribution $f(\mathbf{s}_t \mid \mathbf{y}_{1:T})$
+
+## Methodology 
+
+![Particles are like grains of sand](../../fig/particles-as-sand.png)
+
+## Methodology
+
+![A particle filtering algorithm](../../fig/particle-filter.png)
+
+## Methodology
+
+-   Particle smoothers reweight particles from the filter to approximate $f(\mathbf{s}_{t} \mid \mathbf{y}_{1:T})$
+-   The **two-filter smoother** consists of a re-weighting of particles from a forward filter run and a backward filter run based on the probability density of movements between pairs of locations
+
+## Methodology
+
+![The two filter smoothing algorithm](../../fig/particle-smoother.png)
+
+## Methodology
+
+![Smoothing is like pruning](../../fig/smoothing-and-pruning.png)
+
+# Outputs
+
+## Why should I use `patter`? 
+
+-  `patter` gives us **a probabilistic representation of the possible locations of an individual though time that incorporates our ecological knowledge and all the data that we collect**
+
+## Why should I use `patter`?
+
+  - Refined maps of **space use**:
+      - with a proper biological and statistical interpretation
+      - which outperform those from heuristic models across the board
+  - Refined estimates of **residency**:
+      - At time-scales of interest (e.g., daily, weekly, yearly residency)
+  - Refined **downstream analyses** (e.g., habitat preferences) that can incorporate uncertainty in the individual's location through time
+      
+## Why should I use `patter`? 
+
+![`patter` produces refined maps of space use (Lavender et al., [2025a](https://doi.org/10.1111/2041-210X.70028))](../../fig/patter-maps.png)
+
+## Why should I use `patter`? 
+
+![`patter` consistently outperforms heuristic methods (Lavender et al., [2025a](https://doi.org/10.1111/2041-210X.70028))](../../fig/patter-me.png)
+
+## Why should I use `patter`?
+
+![`patter` produces refined estimates of residency (Lavender et al., [2025b](https://doi.org/10.1111/2041-210X.70029))](../../fig/patter-residency.png)
+
+# Set up
+
+## Operating systems
+
+-   `patter` v.1.0.0 supports Windows and MacOS
+-   `patter` v.2.0.0 supports Windows, MacOS and Linux
+
+::: callout-note
+There are some special considerations for running `patter` on linux that we won't discuss today. Please get in touch if you are running `patter` on HPC linux environments.
+:::
+
+## Installation {.smaller}
+
+-   To install `patter`, follow the instructions on <https://github.com/edwardlavender/patter>
+    -   Install [`R`](https://www.r-project.org) and [`Julia`](https://julialang.org)
+    -   On Windows, install [`RTools`](https://cran.r-project.org/bin/windows/Rtools/)
+    -   On `MacOS`, if required, install [`Xcode`](https://developer.apple.com/xcode/resources/) (and configure `.Makevars`)
+    -   Install [`patter`](https://github.com/edwardlavender/Patter) (and let it handle `Julia` dependencies)
+
+::: callout-important
+A recent `Julia` version (≥ 1.10 [LTS]) is recommended. Download links are [here](https://julialang.org/downloads/) or you can use [`juliaup`](https://github.com/JuliaLang/juliaup). Follow the [README](https://github.com/edwardlavender/patter) instructions for further guidance. 
+:::
+
+## Project set up {.smaller}
+
+1.  (optional) Set up an RStudio project
+2.  (optional) Initiate local-dependency management with `renv` (use `renv::init()`)
+3.  (optional) Build project directories (`data/`, `data-raw/`, `R/`, **`Julia/`**, ...)
+4.  Install, load & attach `patter` (as explained previously)
+5.  (optional) Set `Julia` options (next slide)
+6.  Connect to `Julia` (via `julia_connect()`)
+
+::: callout-note
+`renv` is an `R` package that implements local-dependency management. In `Julia`, we get this 'for free'. In `patter`, set `JULIA_PROJ` to use a local package environment for the `Julia` dependencies (this is generally recommended).
+:::
+
+## Project set up: `JULIA` options {.smaller}
+
+-   `JULIA_HOME` is the location of the `Julia` installation
+
+    -   Usually, `JULIA_HOME` is found automatically, but it may be required if `Julia` is installed in a non-standard location
+    -   E.g., on an Intel Mac `JULIA_HOME` may be something like `/Applications/Julia-1.10.app/Contents/Resources/julia/bin/`
+
+-   (optional) `JULIA_PROJ` is the location of the Julia project (`./Julia/`)
+
+-   (optional) `JULIA_NUM_THREADS` is the number of threads
+
+- (optional) `JULIA_PATTER_SOURCE` is the source of the `Patter.jl` package (for advanced use)
+
+::: callout-important
+On Windows, `JULIA_NUM_THREADS` must be set system-wide as an environment variable. Follow the guidance [here](https://github.com/edwardlavender/patter/issues/11#issuecomment-2259962600).
+:::
+
+## Project set up: `JULIA` options {.smaller .scrollable}
+
+-   It is a good idea to set `JULIA` options globally via `.Rprofile` (or `.Renviron`):
+
+```{r, eval = FALSE}
+# Set JULIA_HOME
+# * This is usually not required
+
+# (optional) Set JULIA_PROJ to ./Julia/
+if (!requireNamespace("here", quietly = TRUE)) {
+  install.packages("here")
+}
+Sys.setenv(JULIA_PROJ = here::here("Julia"))
+
+# (optional) Set JULIA_NUM_THREADS
+# * This works on MacOS and Linux 
+Sys.setenv(JULIA_NUM_THREADS = parallel::detectCores())
+
+# (optional) Set additional options 
+Sys.setenv(OMP_NUM_THREADS = parallel::detectCores())
+```
+
+::: callout-note
+See `?julia_connect()` for guidance. 
+:::
+
+## Connect to `Julia` {.smaller}
+
+-   After `library(patter)`, run `julia_connect()` to connect `R` to `Julia`. This:
+    1.  Sets up `JuliaCall` (which handles the `R`--`Julia` coupling)
+    2.  Validates the `Julia` installation (\@ `JULIA_HOME`)
+    3.  (Optional) Activates a local `Julia` project (`JULIA_PROJ`)
+    4.  Installs and pre-compiles `Julia` dependencies (e.g., `Patter.jl`)
+-   In general, you should run `julia_connect()` once per `R` session.
+
+::: callout-note
+The first call to `julia_connect()` may take several minutes (or longer) as `Julia` packages are installed and pre-compiled. (On old laptops, we have observed times up to 30 minutes!) Subsequent calls are faster.
+:::
+
+## Connect to `Julia`
+
+-   The syntax for `julia_connect()` is:
+
+```{r, eval = FALSE}
+julia_connect(JULIA_HOME, JULIA_PROJ, JULIA_NUM_THREADS, ...)
+```
+
+-   If you've set environmental variables (recommended), just use:
+
+```{r, eval = FALSE}
+julia_connect()
+```
+
+# Workflow
+
+## Workflow
+
+![The patter workflow](../../fig/patter-workflow.png)
+
+## Workflow {.smaller}
+
+-   We will work though:
+    -   Overview
+    -   Boilerplate setup
+    -   An example workflow with real data
+    -   An example simulation-based workflow
+
+::: callout-note
+For a summary of the workflow, see `vignette("b-workflow-outline", package = "patter")`. See the [README](https://github.com/edwardlavender/patter) for an example workflow. `patter` functions are well documented. Please read them carefully and follow the links to the `Patter.jl` documentation where directed. Help us to improve the documentation by submitting [GitHub issues](https://github.com/edwardlavender/patter/issues).
+:::
+
+## Workflow
+
+-   `patter` is easy: 
+    1. Define the state type and the movement model
+    2. Define the observation model(s) 
+    3. Simulate observations or assemble real-world datasets
+    4. Run the forward filter and the backward information filter
+    5. Run the particle smoother
+    6. Analyse the results! 
+    
+## Workflow
+
+-   The challenge is to formulate biologically sensible movement and observation models 
+-   The code is just boilerplate: copy & paste and edit as required! 
+-   Please reach out on [GitHub](https://github.com/edwardlavender/patter/issues) with queries
+
+# Overview
+
+## Boilerplate setup (1/7)
+
+```{r}
+# Load & attach package 
+library(patter)
+op <- options(patter.verbose = FALSE)
+
+# Ancillary packages
+library(data.table)
+library(dtplyr)
+library(dplyr, warn.conflicts = FALSE)
+library(glue)
+library(JuliaCall)
+library(spatstat.explore)
+library(truncdist)
+```
+
+## Boilerplate setup (1/7) {.smaller}
+
+```{r}
+# Load datasets
+head(dat_detections, 2)
+head(dat_moorings, 2)
+head(dat_archival, 2)
+```
+
+## Boilerplate setup (1/7)
+
+```{r}
+# Connect to Julia 
+julia_connect()
+set_seed()
+```
+
+## Boilerplate setup (1/7)
+
+```{r}
+# Set map 
+map <- dat_gebco()
+set_map(map)
+
+# Study timeline 
+timeline <- seq(as.POSIXct("2016-03-17 01:50:00", tz = "UTC"),
+                as.POSIXct("2016-03-18 01:48:00", tz = "UTC"), 
+                by = "2 mins")
+```
+
+## Set state (2/7)
+
+```{r}
+state <- "StateXY"
+```
+
+## Set movement model (3/7) {.smaller}
+
+```{r}
+mobility   <- 750.0
+model_move <- model_move_xy(.mobility = mobility, 
+                            .dbn_length = glue("truncated(Gamma(1.0, 250.0), upper = {mobility})"),
+                            .dbn_heading = "Uniform(-pi, pi)")
+plot(model_move)
+```
+
+## Set observation model(s) (4/7)
+
+```{r}
+# Acoustic observations 
+det <- dat_detections[individual_id == 25L, ]
+acc <- assemble_acoustics(.timeline   = timeline,
+                          .detections = det,
+                          .moorings   = dat_moorings, 
+                          .services   = NULL)
+head(acc, 3)
+```
+
+## Set observation model(s) (4/7)
+
+```{r}
+# Archival observations 
+arc <- dat_archival[individual_id == 25L, ]
+arc <- assemble_custom(.timeline = timeline, 
+                       .dataset = 
+                           arc |> 
+                             mutate(sensor_id = 1L) |> 
+                             select("sensor_id", "timestamp", obs = "depth") |>
+                             mutate(depth_sigma = 50, depth_deep_eps = 20) |>
+                           as.data.table())
+head(arc, 3)
+```
+
+## Set observation model(s) (4/7)
+
+```{r}
+# All observations
+yobs <- list(ModelObsAcousticLogisTrunc = acc, 
+             ModelObsDepthNormalTruncSeabed = arc)
+```
+
+## Run particle filter (5/7) {.smaller}
+
+```{r}
+# List filter arguments
+args <- list(.timeline    = timeline,
+             .state       = state,
+             .yobs        = yobs,
+             .model_move  = model_move,
+             .n_particle  = 1e5L)
+
+# Forward run
+fwd <- do.call(pf_filter, args, quote = TRUE)
+
+# Backward run
+args$.direction <- "backward"
+bwd <- do.call(pf_filter, args, quote = TRUE)
+```
+
+## Run particle smoother (6/7)
+
+```{r}
+smo <- pf_smoother_two_filter()
+```
+
+## Analyse outputs (7/7)
+
+```{r}
+head(smo$states)
+```
+
+## Analyse outputs (7/7)
+
+```{r}
+head(smo$diagnostics)
+```
+
+## Analyse outputs (7/7)
+
+```{r}
+smo$callstats
+```
+
+## Analyse outputs (7/7)
+
+```{r}
+map_dens(.map = map, .coord = smo$states, .sigma =  bw.diggle)$ud
+```
+
+# Boilerplate setup
+
+## Boilerplate setup {.smaller}
+
+-   Load and attach `patter` and supporting packages:
+
+```{r}
+# Load & attach patter
+library(patter)
+```
+
+```{r}
+# Ancillary packages
+library(data.table)
+library(dtplyr)
+library(dplyr, warn.conflicts = FALSE)
+library(glue)
+library(JuliaCall)
+library(spatstat.explore)
+library(truncdist)
+```
+
+-   Use `patter.verbose` to control user output messages:
+
+```{r}
+# (patter.verbose = TRUE by default)
+op <- options(patter.verbose = FALSE)
+```
+
+-   See `?patter-progress` for additional options
+
+```{r, echo = FALSE}
+# Additional settings
+op <- options(terra.pal = rev(grDevices::terrain.colors(256L)))
+pp <- par(cex.lab = 2, cex.axis = 2)
+```
+
+## Boilerplate setup
+
+-   Connect to `Julia`:
+
+```{r}
+# Connect to Julia
+# (Specify `JULIA_PROJ` and `JULIA_NUM_THREADS` in .Rprofile)
+julia_connect()
+```
+
+-   Set the seed in `R` and `Julia` via `set_seed()`:
+
+```{r}
+set_seed(2024)
+```
+
+# An example workflow with real data
+
+## Study system {.smaller}
+
+-   This first part of this presentation walks though how to reconstruct movements and patterns of space use using example data collected from flapper (*Dipturus intermedius*) in Scotland.
+
+![The Loch Sunart to the Sound of Jura Marine Protected Area](../../fig/mefs-project.png)
+
+## Study system
+
+-   **Read** observations
+-   Define **map** of study system
+-   Define **timeline** of interest
+-   **Assemble** observations
+
+## Study system
+
+Observations include detections at receivers:
+
+```{r}
+head(dat_detections)
+```
+
+::: callout-note
+`patter` uses the words `detections` and `acoustics` to distinguish detection data (which comprise detections alone) and acoustic data (which comprise detections and non-detections, which are implicitly known for each time step).
+:::
+
+## Study system {.smaller}
+
+This is the receiver metadata:
+
+```{r}
+head(dat_moorings)
+```
+
+::: callout-tip
+To incorporate passive acoustic telemetry datasets in `patter`, follow the format for `dat_detections` and `dat_moorings`. There is a `pat_setup_data()` function that you can use to check these datasets. The `receiver_alpha`, `receiver_beta` and `receiver_gamma` columns optionally define receiver-specific parameters of a truncated, distance-decaying logistic detection probability model but (as we will see later) we can use any observational model of our choosing.
+:::
+
+## Study system
+
+We also have archival (depth) observations, collected at a resolution of two-minutes:
+
+```{r}
+head(dat_archival)
+```
+
+## Study system
+
+-   Our goal in the first part of this presentation is to reconstruct movements and patterns of space use **for an example individual** given these data.
+
+```{r}
+# Define detections
+det <-
+  dat_detections |>
+  filter(individual_id == 25L) |>
+  mutate(individual_id = NULL) |>
+  as.data.table()
+```
+
+```{r}
+# Define archival (depth) observations
+arc <-
+  dat_archival |>
+  filter(individual_id == 25L) |>
+  mutate(individual_id = NULL) |>
+  as.data.table()
+```
+
+## Study system
+
+```{r}
+plot(arc$timestamp, arc$depth * -1, 
+     col = "royalblue", type = "l",
+     ylim = c(-max(arc$depth), 0), 
+     xlab = "Time stamp", ylab = "Depth (m)")
+points(det$timestamp, rep(0, nrow(det)))
+```
+
+## Study system
+
+-   We need to define a map of our study system in `R` and `Julia`
+
+::: callout-note
+We use a coarse raster for convenience only. For a real analysis, a better map would be desirable.
+:::
+
+## Study system
+
+```{r, echo = FALSE}
+terra::plot(dat_gebco())
+```
+
+## Study system
+
+-   The map is a **raster** that sets the spatial domain of our analyses and defines the region(s) within which movements are possible
+
+```{r}
+# Read SpatRaster
+map <- dat_gebco()
+
+# dat_gebco() is short-hand for the following:
+# spat.tif <- system.file("extdata", "dat_gebco.tif", package = "patter", mustWork = TRUE)
+# map      <- terra::rast(spat.tif)
+
+# Export SpatRaster as `env` to Julia
+set_map(map)
+```
+
+## Study system
+
+::: callout-note
+In `patter v2.0.0`, initial particles are sampled in `Julia` and `set_map()` includes `.as_Raster` and `.as_GeoArrays` arguments if you need to distinguish the two maps. Use `.as_Raster = TRUE` to define the initial map from which particles are sampled. Use `.as_GeoArrays = TRUE` to define the map for the movement model.
+:::
+
+## Study system
+
+-   Cell entries should be **floats**
+-   Code inhospitable habitats (e.g., land) as `NA_real_`
+-   A planar (e.g. UTM) coordinate reference system is required (units: metres)
+
+::: callout-note
+The planar **raster** format is used for computational efficiency. In our applications, the map is often a **bathymetry** `SpatRaster`. The next version of `patter` may include routines to facilitate the creation of `SpatRaster` if you have a shapefile (or similar). For now, see `terra::rasterize()` to convert a shapefile to a `SpatRaster`. **Raster resolution** can be as high as desired, **providing the data fits in memory**. There is no (minimal?) speed penalty for higher resolution rasters.
+:::
+
+## Study system
+
+-   Define the study timeline:
+    -   This sets the period, and resolution, at which we represent animal movement
+    -   We may have observations regularly or irregularly along this timeline
+
+::: callout-tip
+The appropriate resolution of the timeline is study specific. Considerations include the study species' movement capacity, the complexity of boundaries (e.g., islands), the resolution at which data were collected and available computational resources. In passive acoustic telemetry studies, a reasonable starting point is to (approximately) align the resolution of the timeline with the transmission interval (≈2 mins).
+:::
+
+## Study system
+
+-   Use `assemble_timeline()` to set a timeline based on the input datasets:
+
+```{r}
+timeline <- assemble_timeline(.datasets = list(det, arc), 
+                              .step = "2 mins", 
+                              .trim = TRUE)
+str(timeline)
+```
+
+## Study system
+
+-   Set the timeline using `seq.POSIXt()`:
+
+```{r}
+timeline <- seq(as.POSIXct("2016-03-17 01:50:00", tz = "UTC"),
+                as.POSIXct("2016-03-18 01:48:00", tz = "UTC"), 
+                by = "2 mins")
+str(timeline)
+```
+
+::: callout-tip
+Depending on the time step, it is generally wise to split the time series into chunks (e.g., one-month in duration) and run the algorithms for each chunk. Running the algorithms over prolonged periods increases the chances of convergence failure and may exhaust available memory (though `patter v2.0.0` can handle this via batching). Here, we use a short, bespoke timeline for example speed only. 
+:::
+
+## Structures
+
+-   We have defined our study system (map, timeline, observations)
+
+-   To use this information to reconstruct individual's movements, our next step is to define the components (structures) of our model:
+
+    -   State
+    -   Movement model
+    -   Observation model(s)
+
+## State
+
+-   `State` is an `Abstract Type` in `Patter.jl`
+-   This is an object that holds the parameters describing the 'state' of an individual
+-   Typically, state means 'location' (in two or three dimensions), but additional parameters may be included
+
+```{julia, eval = FALSE}
+# The Julia code for the StateXY struct
+struct StateXY <: State
+    map_value::Float64
+    x::Float64
+    y::Float64
+end 
+```
+
+## State {.smaller}
+
+-   In `Patter.jl`, the following sub-types are built-in:
+
+    -   `StateXY(map_value, x, y)`: Used for 2D states (x, y);
+    -   `StateXYZ(map_value, x, y, z)`: Used for 3D states (x, y, z);
+    -   `StateCXY(map_value, x, y, heading)`: Used for correlated 2D states (x, y, heading);
+    -   `StateCXYZ(map_value, x, y, z, heading)`: Used for correlated 3D states (x, y, z, heading);
+
+::: callout-tip
+It is straightforward new state types; see the help for `?State` (or submit a [GitHub issue](https://github.com/edwardlavender/patter/issues)).
+:::
+
+## State
+
+-   In `patter`, you just need to specify the `State` sub-type as a `character` string:
+    -   `"StateXY"` maps onto `StateXY` in `Julia`
+    -   `"StateXYZ"` 
+    -   `"StateCXY"` 
+    -   `"StateCXYZ"` 
+
+```{r}
+state <- "StateXY"
+```
+
+-   Each `State` sub-type maps onto a corresponding movement model
+
+## Movement model
+
+-   `ModelMove` is an `Abstract Type` in `Patter.jl`
+-   This is an object that holds the dimensions of the movement model, e.g.,
+    -   The map
+    -   A distribution of step lengths
+    -   A distribution of headings
+
+```{julia, eval = FALSE}
+# The Julia code for the ModelMoveXY struct
+struct ModelMoveXY{T, U, V, W} <: ModelMove
+    map::T
+    mobility::U
+    dbn_length::V
+    dbn_heading::W
+end 
+```
+
+## Movement model {.smaller}
+
+-   The movement model can be instantiated via an `R` `model_move_*()` wrapper
+    -   `StateXY` maps onto `ModelMoveXY`, which is wrapped by `model_move_xy()`
+    -   `StateXYZ` maps onto `ModelMoveXYZ`, which is wrapped by `model_move_xyz()`
+    -   `StateCXY` maps onto `ModelMoveCXY`, which is wrapped by `model_move_cxy()`
+    -   `StateCXYZ` maps onto `ModelMoveCXYZ`, which is wrapped by `model_move_cxyz()`
+    
+-   The fields of the movement model in the `model_move_*()` wrapper must be specified using `Julia` code
+
+## Movement model
+
+-   Define a two-dimensional random walk (x, y):
+
+```{r}
+# Define maximum moveable speed between two time steps
+mobility   <- 750.0
+
+# Define 2D RW (XY)
+model_move <- model_move_xy(.mobility = mobility, 
+                            .dbn_length = glue("truncated(Gamma(1.0, 250.0), upper = {mobility})"),
+                            .dbn_heading = "Uniform(-pi, pi)")
+```
+
+::: callout-tip
+In `Julia`, a number without a decimal point is an integer---which may occasionally cause trouble if a float is required. Specify floats by adding the `.0`.
+:::
+
+## Movement model
+
+-   `move_*()` wrappers return a string of `Julia` code:
+
+```{r}
+model_move
+```
+
+::: callout-tip
+To check the parametrisation of other distributions, such as the `Normal` distribution in Julia, use `JuliaCall::julia_help("Normal")`. For new types of movement model; see the help for `?State` (or submit a [GitHub issue](https://github.com/edwardlavender/patter/issues)).
+:::
+
+## Movement model
+
+-   Visualise the components of our movement model
+-   All built-in movement models have an associated `plot` method (see `?plot.ModelMove`)
+
+```{r}
+plot(model_move)
+```
+
+## Movement model 
+
+-   Visualise the components of our movement model manually:
+
+```{r}
+expr <- expression({
+  pp <- par(mfrow = c(1, 2))
+  curve(dtrunc(x, spec = "gamma", a = 0, b = mobility, shape = 1.0, scale = 250.0), 
+        from = 0, to = mobility, n = 1e3L,
+        xlab = "Step length (m)", ylab = "Density")
+  curve(dunif(x, -pi, pi),
+        from = -pi - 0.1, to = pi + 0.1, n = 1e3L,
+        xlab = "Heading (rad)", ylab = "Density")
+  par(pp)
+})
+```
+
+## Movement model
+
+-   Visualise the components of our movement model manually:
+
+```{r}
+eval(expr)
+```
+
+## Movement model {.smaller}
+
+-   Visualise realisations of the movement model:
+
+```{r, eval = FALSE}
+paths <- sim_path_walk(.map = map, 
+                       .timeline = timeline,
+                       .state = state,
+                       .model_move = model_move, 
+                       .n_path = 2L, .one_page = TRUE)
+```
+
+::: callout-tip
+`sim_path_walk()` can be used to simulate new trajectories or visualise a prior. The simulation is much faster and more flexible than many alternative routines (e.g., `glatos::crw_in_poly()`).
+:::
+
+::: callout-important
+In the particle filter, the movement model is a prior. It is a good idea to visualise realisations of the prior. The simulated trajectories should look sensible.
+:::
+
+## Movement model
+
+-   Visualise realisations of the movement model:
+
+```{r, eval = TRUE, echo = FALSE}
+paths <- sim_path_walk(.map = map, 
+                       .timeline = timeline,
+                       .state = state,
+                       .model_move = model_move, 
+                       .n_path = 2L, .one_page = TRUE)
+```
+
+## Movement model {.smaller}
+
+-   Visualise realisations of the movement model:
+
+```{r}
+head(paths)
+```
+
+::: callout-tip
+`Patter.jl` automatically truncates the movement model by barriers (e.g., land); that is, we sample movements from a restricted movement model (in the filter) and we evaluate the probability density of truncated moves (in the smoother). With custom movement models, you need to specify `Patter.simulate_step()` method (for the filter) and a `Patter.logpdf_step()` (for the smoother). These methods simulate and evaluate the log-probability of an *unrestricted* step. `Patter.jl` handles the truncation for you (by `Patter.simulate_move()` and `Patter.logpdf_move()`).
+:::
+
+## Movement model
+
+-   More sophisticated movement models are possible, including:
+    -   Random walks in two or three dimensions
+    -   Correlated random walks
+    -   Behavioural-switching models
+-   See the help for `?State` to get started
+
+## Movement model
+
+-   This is an example of a more sophisticated movement model for flapper skate:
+
+![Example behavioural-switching model](../../fig/flapper-movement-model.png)
+
+## Movement model {.smaller}
+
+-   There is a trade-off between simplicity and complexity
+-   It is convenient to assume that static parameters are known
+-   Where parameters are unknown, you can:
+    1.  See Lavender et al. ([2025a](https://doi.org/10.1111/2041-210X.70028)) for guidance on parameter sensitivity
+    2.  Run a sensitivity analysis:
+        -   Use simulations
+        -   Compare results from real-world analyses based on a small number of sensible models
+    3.  Formally propagate uncertainty with multiple algorithm runs
+    4.  Data-driven parameter estimation (if data are sufficient)
+
+## Observation model(s)
+
+-   We have defined the movement model
+-   This encodes the process of animal movement
+-   We now need to define the observation models
+-   These encode the probability of the observations, given the latent (unobserved) location of the animal
+
+## Observation model(s)
+
+-   As a reminder, we have collected detections and depth time series:
+
+```{r}
+head(det, 3)
+head(arc, 3)
+```
+
+## Observation model(s)
+
+-   Each dataset should comprise a time series of observations *for one individual*
+-   Datasets should be pre-processed as required: e.g.,
+    -   Check receiver locations are valid on the map
+    -   Identify false detections
+-   `patter` accepts any kind of observational dataset
+
+::: callout-tip
+For passive acoustic telemetry and/or archival data, the `pat_setup_data()` function is available to validate the format of these data types for use in `patter`.
+:::
+
+## Observation model(s)
+
+-   Each dataset should be provided as a `data.table` with the following columns:
+    -   `sensor_id`, `timestamp`, `obs`;
+    -   Additional columns that define observation-model parameters;
+
+::: callout-tip
+See `?assemble` for full details. Note that the resolution of the time stamps must match the resolution of the `timeline`, although `assemble_custom()` can handle this for you (but irregular observations are fine).
+:::
+
+## Observation model(s)
+
+-   In passive acoustic telemetry datasets, we record detections but the observations comprise **detections and non-detections**
+-   Use the `assemble_acoustics()` helper to assemble the acoustic (detection, non-detection) time series:
+
+```{r}
+acc <- assemble_acoustics(.timeline   = timeline,
+                          .detections = det,
+                          .moorings   = dat_moorings, 
+                          .services   = NULL)
+```
+
+## Observation model(s) {.smaller .scrollable}
+
+```{r}
+head(acc)
+```
+
+::: callout-note
+`assemble_acoustics()` accounts for variable receiver deployment periods and servicing events. Duplicate observations (that is, detections at the same receiver in the same time step) are dropped. If available in `.moorings`, additional columns (`receiver_alpha`, `receiver_beta` and `receiver_gamma`) are included as required for the default acoustic observation model (`ModelObsAcousticLogisTrunc`). But you have the flexibility to define receiver- and time-varying parameters by modifying the `data.table` as required.
+:::
+
+## Observation model(s)
+
+-   If you have passive acoustic telemetry observations, you should also use acoustic containers
+-   The syntax is:
+
+```{r, eval = FALSE}
+# ModelObsContainer
+containers <- assemble_acoustics_containers(.timeline, .acoustics, .mobility, ...)
+```
+
+::: callout-note
+Acoustic containers are a special kind of 'observation' that enhance the efficiency of the particle filter (reducing the number of particles required to achieve convergence). For simplicity, we don't implement them here. 
+:::
+
+## Observation model(s)
+
+-   We have to assemble other datasets with the required columns (`sensor_id`, `timestamp`, `obs`, `...`) manually
+
+```{r}
+head(arc, 2)
+
+arc <- 
+  arc |> 
+  # Define 'dummy' sensor_id
+  mutate(sensor_id = 1L) |> 
+  # Observations must be in the 'obs' column
+  rename(obs = "depth") |> 
+  # Select columns
+  select("sensor_id", "timestamp", "obs") |>
+  # Add observation model parameters 
+  mutate(depth_sigma = 50, depth_deep_eps = 20) |>
+  as.data.table()
+```
+
+## Observation model(s) {.smaller}
+
+-   It is a good idea to pass other datasets through the `assemble_custom()` function for processing/checks though
+
+```{r}
+arc <- assemble_custom(.timeline = timeline, .dataset = arc)
+head(arc)
+```
+
+## Observation model(s)
+
+-   For each dataset, we need to define the corresponding `ModelObs` sub-type
+-   A `ModelObs` sub-type is a structure that holds the parameters of an observation model
+-   `ModelObs` sub-types are instantiated in `Julia` using the `data.table`(s) assembled above
+-   We use `ModelObs` instances to simulate observations or to evaluate the log-probability of observations, given the latent location
+
+## Observation model(s)
+
+-   The following `ModelObs` structures are built-in to `Patter.jl`:
+    -   `ModelObsAcousticLogisTrunc`
+    -   `ModelObsDepthUniformSeabed`
+    -   `ModelObsDepthNormalTruncSeabed`
+    -   `ModelObsContainer`
+
+::: callout-tip
+It is straightforward to define new `ModelObs` sub-types for new data types; see `?ModelObs` (or submit a [GitHub issue](https://github.com/edwardlavender/patter/issues)).
+:::
+
+## Observation model(s)
+
+-   `ModelObsAcousticLogisTrunc` is designed for acoustic observations
+-   The structure holds the parameters of truncated logistic detection probability model
+-   This contains the fields we need to simulate an observation, or evaluate the log-probability of an observation, given a transmission from a particular location
+
+## Observation model(s)
+
+```{julia, eval = FALSE}
+# Julia code for the ModelObsAcousticLogisTrunc sub-type
+struct ModelObsAcousticLogisTrunc <: ModelObs
+    sensor_id::Int64
+    receiver_x::Float64
+    receiver_y::Float64
+    receiver_alpha::Float64
+    receiver_beta::Float64    
+    receiver_gamma::Float64
+end
+```
+
+## Observation model(s)
+
+-   In a truncated logistic detection probability model:
+    -   `receiver_alpha` and `receiver_beta` affect the rate of decline in detection probability with distance from a receiver
+    -   `receiver_gamma` is the maximum detection range
+
+## Observation model(s)
+
+![Example truncated logistic detection probability models](../../fig/flapper-ModelObsAcousticLogisTrunc.png)
+
+## Observation model(s)
+
+-   You can explore different parameters values using this code:
+
+```{r}
+expr <- expression({
+  # Define parameters 
+  receiver_alpha <- 4
+  receiver_beta  <- -0.01
+  receiver_gamma <- 1000
+  # Visualise model 
+  curve(ifelse(x <= receiver_gamma, 
+              1 / (1 + exp(-(receiver_alpha + receiver_beta * x))), 
+              0), 
+       from = 0, to = receiver_gamma, 
+       xlab = "Distance (m)", ylab = "Detection probability")
+})
+```
+
+## Observation model(s)
+
+```{r}
+eval(expr)
+```
+
+## Observation model(s)
+
+-   `ModelObsDepthNormalTruncSeabed` is a `ModelObs` structure for a depth observation and a truncated normal model
+-   This is a suitable depth-observation model for benthic/demersal species
+-   The individual must be located in an envelope around the bathymetric depth, defined by a normal distribution centred at this location, truncated at `depth_deep_eps` m below the seabed and 0 m, with standard deviation `depth_sigma`
+
+## Observation model(s)
+
+![Example truncated normal depth observation models](../../fig/flapper-ModelObsDepthNormalTrunc.png)
+
+## Observation model(s)
+
+-   `ModelObsDepthUniformSeabed` is `ModelObs` structure for a depth observation and a uniform depth model
+-   This model assumes that an individual must be located in an envelope around the bathymetric depth, defined by two error terms (`depth_shallow_eps` and `depth_deep_eps`)
+-   This model can be tailored for benthic or pelagic species
+
+## Observation model(s)
+
+-   `ModelObsContainer` is a `ModelObs` structure for capture/recapture/acoustic containers
+-   This is a special 'observation' type that represents the distance the individual must be from some future location (e.g., a recapture location)
+-   `ModelObsContainer`s are effectively a redundant use of the data that mitigates particle degeneracy
+
+## Observation model(s)
+
+-   For the particle filter, multiple sets of observations should be provided as a named `list`
+-   List names define the model sub-types
+
+```{r}
+yobs <- list(ModelObsAcousticLogisTrunc = acc, 
+             ModelObsDepthNormalTruncSeabed = arc)
+```
+
+::: callout-note
+In `Julia`, the `list` of observations is translated into a hash table of `ModelObs` sub-types.
+:::
+
+## Observation model(s)
+
+-   As for the movement model, the parameters of the observation model(s) are specified by the user
+-   See the earlier advice for situations where parameters are uncertain
+
+## Particle filter
+
+-   We have now defined:
+    1.  Study area map
+    2.  Study timeline
+    3.  State
+    4.  Movement model
+    5.  Observations/observation model parameters/observation model sub-types
+-   We are now in a position to run the particle filter!
+
+## Particle filter
+
+-   At $t = 1$:
+
+    1.  Sample initial particles (locations → `State`s), via `Patter.simulate_states_init()`
+    2.  For each simulated particle, compute the (log) weight, via `Patter.logpdf_obs()`
+    3.  Record a subset of `.n_record` resampled (equally weighted) particles in memory 
+
+## Particle filter {.smaller}
+
+-   For $t \in 2, ..., T$
+
+    1.  Simulate animal movement, generating new particles (locations → `State`s), via `Patter.simulate_step()`
+    2.  For each simulated particle, compute the (log) weight, via `Patter.logpdf_obs()`
+    3.  Record a subset of `.n_record` resampled (equally weighted) particles in memory 
+    4.  Periodically, resample particles with replacement (using the low-variance resampling algorithm)
+
+::: callout-tip
+For custom `State`, `ModelMove` and/or `ModelObs` structures, associated methods for corresponding `Julia` routines are required (see `?State`, `?ModelMove` and `?ModelObs` for guidance).
+:::
+
+## Particle filter {.smaller .scrollable}
+
+-   The particle filter is implemented via `pf_filter()` with the following arguments:
+
+```{r, eval = FALSE}
+pf_filter(
+  .timeline,
+  .state = "StateXY",
+  .xinit = NULL,
+  .model_move = model_move_xy(),
+  .yobs,
+  .n_move = 100000L,
+  .n_particle = 1000L,
+  .n_resample = as.numeric(.n_particle),
+  .t_resample = NULL,
+  .n_record = 1000L,
+  .n_iter = 1L,
+  .direction = c("forward", "backward"),
+  .batch = NULL,
+  .collect = TRUE,
+  .progress = julia_progress(),
+  .verbose = getOption("patter.verbose")
+)
+```
+
+## Particle filter {.smaller .scrollable}
+
+| **Argument**   | **Description**                                   |
+|----------------|---------------------------------------------------|
+| `.timeline`    | The timeline                                      |
+| `.state`       | The state                                         |
+| `.xinit`       | Initial location(s)                               |
+| `.model_move`  | Movement model                                    |
+| `.yobs`        | The named list of observations                    |
+| `.n_move`      | Set to default                                    |
+| `.n_particle`  | The number of particles                           |
+| `.n_resample`  | Set to default                                    |
+| `.t_resample`  | Set to default                                    |
+| `.n_record`    | Set to default                                    |
+| `.n_iter`      | Number of particle filter iterations              |
+| `.direction`   | The direction of the particle filter              |
+| `.batch`       | Implement batching to handle memory requirements  |
+| `.collect`     | Collect outputs from `Julia` in `R`               |
+| `.progress`    | Progress bar options                              |
+| `.verbose`     | Show user output                                  |
+
+## Particle filter {.smaller}
+
+-   To set initial states:
+    1.  Specify known states via `.xinit` (or via `set_map()`'s `.as_Raster` argument)
+    2.  Let `patter` sample states automatically from part of the `map` that is compatible with the initial observations
+
+::: callout-tip
+If you know the initial location(s) of the animal, provide this information via `.xinit` (or via `set_map()`'s `.as_Raster` argument). If `.xinit` is not provided, initial locations are sampled uniformly from the part of the `map` that is compatible with the initial observations. In `patter v2.0.0`, this happens in `Julia`. You can set a unique initial map via `set_map(..., .as_Raster = TRUE, .as_GeoArray = FALSE)`. For custom `ModelObs` subtypes, `Patter.map_init()` methods are required for automated sampling of the part of the map compatible with observations. In `patter v2.0.0`, methods written in `Julia` are required.
+:::
+
+## Particle filter {.smaller}
+
+-   Let's set up the filter for our example time series:
+
+```{r}
+# List filter arguments
+args <- list(.timeline    = timeline,
+             .state       = state,
+             .yobs        = yobs,
+             .model_move  = model_move,
+             .n_particle  = 1e5L)
+```
+
+::: callout-tip
+How many particles do we need? Recall that the particles approximate the distribution of an individual's `State` at every time step ($f(\mathbf{s}_t \mid \mathbf{y}_{1:t})$ in the filter). The number of particles required to approximate a distribution depends on its dimensionality. For a two-dimensional distribution, ≈1000 particles may be sufficient. In practice, in the filter, a larger number of particles may be required to ensure that enough particles remain 'alive' at each time step to approximate the distribution. With acoustic observations alone, relatively few particles are required. (For passive acoustic telemetry data, the `ModelObsContainer` structure facilitates convergence with fewer particles than used here (≤ 25,000)). With additional observations, more particles may be required depending on the complexity of the landscape that particles have to explore. This is associated with a linear speed penalty.
+:::
+
+# Particle filter {.smaller}
+
+-   Let's run the filter!
+
+```{r}
+# Forward run
+fwd <- do.call(pf_filter, args, quote = TRUE)
+```
+
+::: callout-warning
+We are approximating the (partial) marginal distribution of the individual's location, given the data up to and including that time, **at every time step** (every two minutes here!). **This is awesome** and the `Julia` code is very fast, but it is a lot to ask and for large numbers of particles, observations and time steps, the filter may take minutes or hours to run (especially on older computers). 
+:::
+
+# Particle filter {.smaller}
+
+-   The filter returns a `pf_particles-class` object
+-   This is a named `list`:
+
+```{r}
+  class(fwd)
+  summary(fwd)
+```
+
+# Particle filter
+
+-   `states` is a `data.table` of particles:
+
+```{r}
+head(arrange(fwd$states, timestep))
+```
+
+::: callout-warning
+The `path_id` is simply an index; it is named `path_id` for consistency with `sim_path_walk()`. These are **not** trajectories.
+:::
+
+# Particle filter
+
+-   Map particle coordinates:
+
+```{r, eval = FALSE}
+plot_xyt(.map = map, .coord = fwd$states, .steps = 1L, 
+         .add_points = list(pch = ".", col = "red"))
+```
+
+::: callout-tip
+In `pf_filter()`, at each time step, `.n_record` particles are sampled with replacement, in line with the weights, and saved in memory. All recorded particles thus have **equal weight**.
+:::
+
+::: callout-tip
+See the help for `?plot_xyt()` to create animations.
+:::
+
+# Particle filter
+
+```{r, echo = FALSE}
+plot_xyt(.map = map, .coord = fwd$states, .steps = 1L, 
+         .add_points = list(pch = ".", col = "red"))
+```
+
+# Particle filter
+
+-   We can visualise the probability distribution for the individual's initial location as the proportion of particles in each grid cell:
+
+```{r, eval = FALSE}
+map_pou(.map = map, .coord = fwd$states[timestep == 1L, ])
+```
+
+::: callout-note
+Recall that particles are equally weighted at this point thanks to resampling. 
+:::
+
+::: callout-tip
+`map_*()` functions such as `map_pou()` and `map_dens()` accept any `data.table` of (x, y) coordinates. Time series and weights (marks) are handled automatically. 
+:::
+
+# Particle filter
+
+```{r, echo = FALSE}
+map_pou(.map = map, .coord = fwd$states[timestep == 1L, ]) |> invisible()
+```
+
+# Particle filter
+
+-   `diagnostics` is a `data.table` of filter diagnostics:
+
+```{r}
+fwd$diagnostics
+```
+
+# Particle filter
+
+-   `maxlp` is the maximum log-posterior at each time step (assuming resampling \@ every time step):
+
+```{r, eval = FALSE}
+plot(fwd$diagnostics$timestamp, fwd$diagnostics$maxlp, 
+     xlab = "Time stamp", ylab = "maxlp",
+     type = "l")
+```
+
+::: callout-tip
+`exp(maxlp)` is the highest likelihood score at each time step (0--1). Watch out for time steps with very low `maxlp`. For passive acoustic telemetry analyses, `ModelObsAcousticLogisTrunc` helps to prevent this via the `receiver_gamma` threshold.
+:::
+
+# Particle filter
+
+```{r, echo = FALSE}
+plot(fwd$diagnostics$timestamp, fwd$diagnostics$maxlp, 
+     xlab = "Time stamp", ylab = "maxlp",
+     type = "l")
+```
+
+# Particle filter {.smaller}
+
+-   `ess` is the effective sample size (ESS):
+
+```{r, eval = FALSE}
+plot(fwd$diagnostics$timestamp, fwd$diagnostics$ess, 
+     xlab = "Time stamp", ylab = "ESS",
+     type = "l")
+points(det$timestamp, rep(0, nrow(det)),
+       pch = 21, col = "red", bg = "red", cex = 0.5)
+abline(h = 500, col = "royalblue", lty = 3)
+```
+
+::: callout-tip
+For a 2D distribution (which we have here), ideally the ESS should be \>= 500 particles to achieve a reasonable approximation. Small ESS may suggest we need to increase the number of particles (or revise our assumptions). However, small ESS is not necessarily problematic, as there may be time steps when there were only a small number of possible locations in which the individual could have been located.
+:::
+
+# Particle filter
+
+```{r, echo = FALSE}
+plot(fwd$diagnostics$timestamp, fwd$diagnostics$ess, 
+     xlab = "Time stamp", ylab = "ESS",
+     type = "l")
+points(det$timestamp, rep(0, nrow(det)),
+       pch = 21, col = "red", bg = "red", cex = 0.5)
+abline(h = 500, col = "royalblue", lty = 3)
+```
+
+# Particle filter {.smaller}
+
+-   `callstats` defines call statistics 
+-   This includes a column for log-likelihood of the filter run (`loglik`) and whether or not the filter converged (`convergence`):
+
+```{r}
+fwd$callstats
+```
+
+::: callout-warning
+Convergence failures produce a `warning`. These may occur for a variety of reasons including (1) code bugs, (2) prior--data conflicts, (3) incorrectly specified observation models and (4) extreme particle degeneracy. With acoustic observations alone, likely causes are 1--3. We have observed extreme particle degeneracy (4) in complex, labyrinthine landscapes, where particles have to explore a large number of possible routes of which only a tiny fraction are ultimately compatible with data.
+:::
+
+# Particle filter
+
+-   The particle filter approximates the partial marginal distribution of the individual's location given the data *up to and including* each time step, that is, $f(\mathbf{s}_t \mid \mathbf{y}_{1:t})$
+-   If we run the particle filter forwards and backwards, we can use the two-filter smoother to account for *all* data, that is, $f(\mathbf{s}_t \mid \mathbf{y}_{1:T})$
+-   In most realistic scenarios, this substantially improves maps of space use
+
+# Particle filter
+
+-   Run the filter backwards:
+
+```{r}
+# Backward run
+args$.direction <- "backward"
+bwd <- do.call(pf_filter, args, quote = TRUE)
+```
+
+::: callout-tip
+Take care when specifying initial locations for the backward run.
+:::
+
+## Two-filter smoother
+
+- Smoothing requires us to compute the probability density of movements between locations
+- We account for automatic truncation of the movement model via a Monte Carlo simulation
+- To speed up the simulation, we can set a 'validity map' for certain kinds of movement model
+- This is the region within which movements are always valid
+
+## Two-filter smoother
+
+```{r}
+pp <- par(mfrow = c(1, 2))
+terra::plot(map)
+set_vmap(.map = map, .mobility = mobility, .plot = TRUE)
+par(pp)
+```
+
+## Two-filter smoother
+
+-   Run the two-filter smoother using outputs from `pf_filter()` in the `Julia` environment:
+
+```{r}
+# Run smoother 
+smo <- pf_smoother_two_filter(.n_particle = 100L, .n_sim = 100L)
+
+# Reset vmap
+set_vmap()
+```
+
+## Two-filter smoother {.smaller}
+
+| **Argument**   | **Description**                                                                                  |
+|----------------|--------------------------------------------------------------------------------------------------|
+| `.n_particle`  | The number of particles from the filter used in the algorithm                                    |
+| `.n_sim`       | The number of Monte Carlo simulations used to compute the normalisation constant (when required) |
+| `.cache`       | Cache normalisation constants for speed                                                          |
+| `.batch`       | Use batching to handle large memory requirements                                                 |
+| `.collect`     | Collect outputs in Julia in R                                                                    |
+| `.progress`    | Progress bar options                                                                             |
+| `.verbose`     | Show user output                                                                                 |
+
+## Two-filter smoother
+
+::: callout-note
+Smoothing is expensive ($\mathcal{O}(TN^2)$). In this example, we use `.n_particle = 100L` for speed only. For real analyses, `.n_particle = 1000L` is generally acceptable. `.n_sim = 100L` is reasonable.
+:::
+
+::: callout-note
+Smoothing uses the probability density of movements between pairs of locations. The density of an unrestricted move is evaluated by `Patter.logpdf_step()`. For custom movement models, a `Patter.logpdf_step()` method is required.
+:::
+
+## Two-filter smoother
+
+-   `pf_smoother_two_filter()` returns the familiar `pf_particles-class` object:
+
+```{r}
+class(smo)
+summary(smo)
+```
+
+## Two-filter smoother
+
+-   We can analyse the outputs in the same way as those from the filter:
+
+```{r}
+head(arrange(smo$states, timestep))
+```
+
+## Two-filter smoother
+
+-   `diagnostics` includes ESS:
+
+```{r}
+head(smo$diagnostics)
+```
+
+## Two-filter smoother
+
+-   `callstats`:
+
+```{r}
+smo$callstats
+```
+
+## Mapping
+
+-   We can compute probability-of-use (POU) using particle samples from the filter (for comparison) or the smoother (recommended):
+
+```{r, eval = FALSE}
+map_pou(.map = map, .coord = smo$states)$ud
+```
+
+## Mapping
+
+```{r, echo = FALSE}
+map_pou(.map = map, .coord = smo$states)$ud |> invisible()
+```
+
+## Mapping
+
+-   In practice, POU can be sensitive to grid resolution and kernel smoothing may be desirable
+
+```{r, eval = FALSE}
+map_dens(
+  .map,
+  .owin = as.owin.SpatRaster(.map),
+  .coord = NULL,
+  .discretise = FALSE,
+  .shortcut = list(),
+  .sigma = bw.h,
+  ...,
+  .fterra = FALSE,
+  .plot = TRUE,
+  .tryCatch = TRUE,
+  .verbose = getOption("patter.verbose")
+)
+```
+
+## Mapping {.smaller}
+
+-   `map_dens()` implements kernel smoothing via `spatstat.explore::density.ppp()`
+    -   Use `.sigma` to choose the method to estimate the bandwidth
+    -   E.g., `bw.diggle` implements cross validation (expensive)
+    -   Edge-correction is automatically implemented
+
+::: callout-note
+The default `sigma` in `map_dens()` differs from `density.ppp()`. `map_dens()` uses `bw.h()`, which sets the bandwidth based on the combined variance of summarised coordinates using the ad-hoc method (Worton, [1989](https://doi.org/10.2307/1938423)); i.e., `bw.h = function(X) sqrt(0.5 * (var(X$x) + var(X$y))) * (X$n^(-1/6))`. 
+:::
+
+::: callout-tip
+To improve speed: specify `.owin`, using a **simplified** `sf` window, set `.discretise = TRUE` and use `.fterra = TRUE`. 
+:::
+
+## Mapping {.smaller}
+
+-   Implement kernel smoothing with smoothed particles:
+
+```{r, eval = FALSE}
+# Estimate UD
+ud <- map_dens(.map = map,
+               .coord = smo$states,
+               .sigma = bw.diggle)$ud
+
+# Add home range
+map_hr_home(ud, .add = TRUE)
+```
+
+::: callout-important
+This map is a **biologically and probabilistically sound** utilisation distribution. Cell colours denote the probability density of observing an individual in a given grid cell at a randomly chosen time.
+:::
+
+::: callout-warning
+Don't confuse particle smoothing with post-hoc kernel smoothing!
+:::
+
+## Mapping
+
+```{r, echo = FALSE}
+# Estimate UD
+ud <- map_dens(.map = map,
+               .coord = smo$states,
+               .sigma =  bw.diggle)$ud
+
+# Add home range
+map_hr_home(ud, .add = TRUE)
+```
+
+## Residency
+
+-   We can easily compute residency in a particular area (at any arbitrary time-scale of our choosing) as the proportion of particles inside/outside an area:
+
+```{r}
+# Define an example polygon (e.g., MPA)
+spatpoly <- 
+  cbind(708433.9, 6251765) |> 
+  terra::vect(crs = terra::crs(map)) |> 
+  terra::buffer(width = 2000)
+```
+
+```{r, eval = FALSE}
+# Visualise study area and 'MPA'
+terra::plot(map)
+points(smo$states$x, smo$states$y, pch = ".", col = "red")
+terra::lines(spatpoly, col = "black", lwd = 2)
+```
+
+## Residency
+
+```{r, echo = FALSE}
+# Visualise study area and 'MPA'
+terra::plot(map)
+points(smo$states$x, smo$states$y, pch = ".", col = "red")
+terra::lines(spatpoly, col = "black", lwd = 2)
+```
+
+## Residency
+
+```{r}
+# Lookup whether or not particles are in the polygon
+spatcoord <- terra::vect(cbind(smo$states$x, smo$states$y))
+smo$states[, in_poly := 
+               terra::relate(spatcoord, spatpoly, relation = "intersects")]
+               
+# Calculate the expected time spent in the 'MPA' (%)
+table(smo$states$in_poly) / nrow(smo$states) * 100
+```
+
+::: callout-important
+This estimate of residency is **probabilistically sound**.
+:::
+
+# Recap
+
+## Boilerplate setup (1/7)
+
+```{r, eval = FALSE}
+# Load & attach package 
+library(patter)
+
+# Load datasets
+head(det, 2)
+head(arc, 2)
+
+# Connect to Julia 
+julia_connect()
+set_seed()
+
+# Set map 
+map <- dat_gebco()
+set_map(map)
+
+# Study timeline 
+timeline <- assemble_timeline(.datasets = list(det, arc))
+```
+
+## Set state (2/7)
+
+```{r, eval = FALSE}
+state <- "StateXY"
+```
+
+## Set movement model (3/7)
+
+```{r, eval = FALSE}
+mobility   <- 750.0
+model_move <- model_move_xy(.mobility = mobility, 
+                            .dbn_length = glue("truncated(Gamma(1.0, 250.0), upper = {mobility})"),
+                            .dbn_heading = "Uniform(-pi, pi)")
+```
+
+## Set observation model(s) (4/7)
+
+```{r, eval = FALSE}
+# Acoustic observations 
+acc <- assemble_acoustics(.timeline   = timeline,
+                          .detections = det,
+                          .moorings   = dat_moorings, 
+                          .services   = NULL)
+
+# Archival observations 
+arc <- assemble_custom(.timeline = timeline, 
+                        .archival = 
+                           arc |> 
+                             rename(obs = "depth") |> 
+                             select("sensor_id", "timestamp", "obs") |>
+                             mutate(depth_sigma = 50, depth_deep_eps = 20) |> 
+                           as.data.table())
+
+# All observations
+yobs <- list(ModelObsAcousticLogisTrunc = acc, 
+             ModelObsDepthNormalTruncSeabed = arc)
+```
+
+## Run particle filter (5/7)
+
+```{r, eval = FALSE}
+# List filter arguments
+args <- list(.map         = map,
+             .timeline    = timeline,
+             .state       = state,
+             .yobs        = yobs,
+             .model_move  = model_move,
+             .n_particle  = 1e5L)
+
+# Forward run
+fwd <- do.call(pf_filter, args, quote = TRUE)
+
+# Backward run
+args$.direction <- "backward"
+bwd <- do.call(pf_filter, args, quote = TRUE)
+```
+
+## Run particle smoother (6/7)
+
+```{r, eval = FALSE}
+smo <- pf_smoother_two_filter()
+```
+
+## Analyse outputs (7/7)
+
+```{r, eval = FALSE}
+map_dens(.map = map, .coord = smo$states, .sigma =  bw.diggle)
+```
+
+```{r, echo = FALSE}
+terra::plot(ud)
+```
+
+# Simulation-based workflow
+
+## Simulation-based workflow
+
+-   `patter` also supports simulation-based workflows:
+    1.  `sim_array()` simulates arrays
+    2.  `sim_path_walk()` simulates movement paths
+    3.  `sim_observations()` simulates observations
+-   You can model simulated observations
+
+::: callout-important
+Simulation studies inform real-world analyses.
+:::
+
+## Simulate arrays
+
+-   Use `sim_array()` to simulate randomly or regularly arranged receivers
+-   Locations are sampled from `.map`
+-   Default observation model parameters (`receiver_alpha`, `receiver_beta`, `receiver_gamma`) can be assigned
+
+```{r, eval = FALSE}
+moorings <- sim_array(.map = map, 
+                      .timeline = timeline,
+                      .arrangement = "random",
+                      .n_receiver = 100L, 
+                      .receiver_alpha = 5, 
+                      .receiver_beta = -0.01, 
+                      .receiver_gamma = 1200, 
+                      .n_array = 1L)
+```
+
+## Simulate arrays
+
+```{r, echo = FALSE}
+moorings <- sim_array(.map = map, 
+                      .timeline = timeline,
+                      .arrangement = "random",
+                      .n_receiver = 100L, 
+                      .receiver_alpha = 5, 
+                      .receiver_beta = -0.01, 
+                      .receiver_gamma = 1200, 
+                      .n_array = 1L, 
+                      .plot = TRUE)
+```
+
+## Simulate arrays
+
+```{r}
+head(moorings)
+```
+
+## Simulate paths
+
+-   We have already seen how to simulate paths
+
+```{r, eval = FALSE}
+# Set state and movement model 
+state      <- "StateXY"
+mobility   <- 500.0
+model_move <- 
+  model_move_xy(.mobility = mobility, 
+                .dbn_length = glue("truncated(Normal(50, 250.0), lower = 0, upper = {mobility})"), 
+                .dbn_heading = "VonMises(0, 0.25)")
+
+# Simulate path using movement model 
+pp <- par(mfrow = c(1, 2))
+path_coord <- sim_path_walk(.map = map, 
+                            .timeline = timeline, 
+                            .state = state, 
+                            .n_path = 1L, 
+                            .model_move = model_move)
+
+# Fit UD using cross validation
+path_ud <- map_dens(.map = map, 
+                    .coord = path_coord, 
+                    .discretise = TRUE,
+                    .fterra = TRUE, 
+                    .sigma =  bw.diggle)$ud
+par(pp)
+```
+
+## Simulate paths
+
+```{r, echo = FALSE}
+# Set state and movement model 
+state      <- "StateXY"
+mobility   <- 500.0
+model_move <- 
+  model_move_xy(.mobility = mobility, 
+                .dbn_length = glue("truncated(Normal(50, 250.0), lower = 0, upper = {mobility})"), 
+                .dbn_heading = "VonMises(0, 0.25)")
+
+# Simulate path using movement model 
+pp <- par(mfrow = c(1, 2))
+path_coord <- sim_path_walk(.map = map, 
+                            .timeline = timeline, 
+                            .state = state,
+                            .n_path = 1L, 
+                            .model_move = model_move)
+
+# Fit UD using cross validation
+path_ud <- map_dens(.map = map, 
+                    .coord = path_coord, 
+                    .discretise = TRUE,
+                    .fterra = TRUE, 
+                    .sigma =  bw.diggle)$ud
+par(pp)
+```
+
+## Simulate paths
+
+```{r}
+head(path_coord)
+```
+
+## Simulate observations
+
+-   To simulate observations, we need to choose our observation models and their parameters
+-   For each observation model, we need to provide parameters as a `data.table` that defines, for each `sensor_id` (e.g., receiver), the model parameters associated with that sensor
+
+::: callout-note
+Time-varying observation model parameters are not currently supported in `sim_observations()` (but are fully supported in `pf_filter()`).
+:::
+
+## Simulate observations
+
+-   Let's set things up to simulate acoustic observations:
+
+```{r}
+# ModelObsAcousticLogisTrunc 
+# > We have multiple acoustic sensors
+# > This data.table includes the relevant parameters
+pars_ModelObsAcousticLogisTrunc <-
+    moorings |>
+    select(sensor_id = "receiver_id",
+           "receiver_x", "receiver_y",
+           "receiver_alpha", "receiver_beta", "receiver_gamma") |>
+    as.data.table()
+```
+
+## Simulate observations {.smaller}
+
+-   And depth observations:
+
+```{r}
+# ModelObsDepthNormalTruncSeabed
+# > We have one depth sensor 
+# > This data.table includes the relevant parameters 
+pars_ModelObsDepthNormalTruncSeabed <- data.frame(sensor_id = 1L,
+                                                  depth_sigma = 20,
+                                                  depth_deep_eps = 20)
+```
+
+::: callout-tip
+Use `?ModelObs` or `JuliaCall::julia_help("ModelObs")` for information on built-in `ModelObs` structures and their parameters.
+:::
+
+::: callout-tip
+Of course, we can define and use custom `ModelObs` sub-types. Just define the sub-type and an associated `Patter.simulate_obs()` method. See the help for `?ModelObs` for examples.
+:::
+
+## Simulate observations
+
+-   Simulate observations along `.timeline` via `sim_observations()`:
+
+```{r}
+obs <- sim_observations(
+  .timeline  = timeline, 
+  .model_obs = list(ModelObsAcousticLogisTrunc = pars_ModelObsAcousticLogisTrunc, 
+                    ModelObsDepthNormalTruncSeabed = pars_ModelObsDepthNormalTruncSeabed))
+```
+
+::: callout-note
+For each sensor, an observation is simulated for each time step. Irregular observations are not not currently supported in `sim_observations()` (but are fully supported in `pf_filter()`).
+:::
+
+## Simulate observations
+
+-   `sim_observations()` returns a `list`, with one element for every `.model_obs`
+-   Each element is a `list`, with one sub-element for each simulated path
+-   Each sub-element is a `data.table` that contains the observations
+
+## Simulate observations
+
+```{r}
+str(obs)
+```
+
+## Simulate observations
+
+```{r}
+acc <- obs$ModelObsAcousticLogisTrunc[[1]]
+head(acc)
+```
+
+## Simulate observations
+
+```{r}
+arc <- obs$ModelObsDepthNormalTruncSeabed[[1]]
+head(arc)
+```
+
+## Simulate observations
+
+```{r, eval = FALSE}
+# Plot depths
+  plot(arc$timestamp, arc$obs * -1, 
+       col = "royalblue", type = "l",
+       ylim = c(-max(arc$obs), 0), 
+       xlab = "Time stamp", ylab = "Depth (m)")
+# Add detections 
+det <- acc[obs == 1L, ]
+points(det$timestamp, rep(0, nrow(det)), col = "red")
+```
+
+## Simulate observations
+
+```{r, echo = FALSE}
+# Plot depths
+  plot(arc$timestamp, arc$obs * -1, 
+       col = "royalblue", type = "l",
+       ylim = c(-max(arc$obs), 0), 
+       xlab = "Time stamp", ylab = "Depth (m)")
+# Add detections 
+det <- acc[obs == 1L, ]
+points(det$timestamp, rep(0, nrow(det)), col = "red")
+```
+
+## Run algorithms {.smaller}
+
+-   Now we can run the algorithms and compare the simulated pattern of space use to the reconstructed pattern:
+
+```{r}
+yobs <- list(ModelObsAcousticLogisTrunc = acc,
+             ModelObsDepthNormalTruncSeabed = arc)
+
+# List filter arguments
+args <- list(.timeline    = timeline,
+             .state       = state,
+             .yobs        = yobs,
+             .model_move  = model_move,
+             .n_particle  = 5e4L, 
+             .verbose     = FALSE)
+
+# Forward run
+fwd <- do.call(pf_filter, args, quote = TRUE)
+
+# Backward run
+args$.direction <- "backward"
+bwd <- do.call(pf_filter, args, quote = TRUE)
+
+# Run smoother 
+smo <- pf_smoother_two_filter(.n_particle = 100)
+```
+
+## Mapping
+
+```{r, eval = FALSE}
+pp <- par(mfrow = c(1, 3))
+
+# Plot the UD for the simulated path 
+terra::plot(path_ud)
+map_hr_home(path_ud, .add = TRUE)
+
+# Plot the estimated UD 
+patter_ud <- map_dens(.map = map, 
+                      .coord = smo$states, 
+                      .discretise = TRUE, 
+                      .fterra = TRUE,
+                      .sigma =  bw.diggle)$ud
+map_hr_home(patter_ud, .add = TRUE)
+
+# Compare to a UD based on the mean-position (COA) algorithm
+coa_ud <- map_dens(.map = map, 
+                   .coord = coa(.map          = map, 
+                                .detections   = det, 
+                                .moorings     = moorings, 
+                                .delta_t      = "2 hours", 
+                                .plot_weights = FALSE), 
+                   .discretise = FALSE, 
+                   .fterra = TRUE, 
+                   .sigma =  bw.diggle)$ud
+
+par(pp)
+```
+
+## Mapping
+
+```{r, echo = FALSE}
+pp <- par(mfrow = c(1, 3))
+
+# Plot the UD for the simulated path 
+terra::plot(path_ud)
+map_hr_home(path_ud, .add = TRUE)
+
+# Plot the estimated UD 
+patter_ud <- map_dens(.map = map, 
+                      .coord = smo$states, 
+                      .discretise = TRUE, 
+                      .fterra = TRUE,
+                      .sigma =  bw.diggle)$ud
+map_hr_home(patter_ud, .add = TRUE)
+
+# Compare to a UD based on the COA algorithm
+coa_ud <- map_dens(.map = map, 
+                   .coord = coa(.map          = map, 
+                                .detections   = det, 
+                                .moorings     = moorings, 
+                                .delta_t      = "2 hours", 
+                                .plot_weights = FALSE), 
+                   .discretise = FALSE, 
+                   .fterra = TRUE, 
+                   .sigma =  bw.diggle)$ud
+
+par(pp)
+```
+
+# Ancillary functions
+
+## Ancillary functions {.smaller}
+
+-   See `?patter` for a full list of `patter` functions
+    - `?datasets-mefs` for example datasets
+    - `?datasets-algorithms` for example outputs
+    - `?patter-progress` for progress options 
+    - `?glossary` for a glossary
+    
+-   Useful ancillary functions include:
+    -   `pat_setup_data()` validates passive acoustic telemetry datasets
+    -   `coa()` runs the COA algorithm 
+    -   `map_hr_*()` functions estimate home ranges
+    -   `skill_*()` function evaluate model skill
+    -   `cl_lapply()` handles efficient R-side parallelisation
+    -   `file_*()` wrappers interact with the file system
+    
+# Advanced
+
+## Custom `State`, `ModelMove` `ModelObs` {.smaller}
+
+-   To incorporate custom structures, we need to:
+    1.  Register the structures in `Julia`
+    2.  Write associated `Julia` methods
+    4.  Write any R wrappers for the routines
+    
+```{julia}
+# Julia code
+# * Load additional packages for these examples
+using Dates
+```
+    
+::: callout-tip
+It is a good idea to include Julia code in `./Julia/src` in a `patter-structs.jl` file (or similar). Source `Julia` code with `JuliaCall::julia_source()`. 
+:::
+
+## Custom `State` and `ModelMove` {.smaller}
+
+-   For custom `State` and `ModelMove` structures, we need to:
+    1.  Register the structures in `Julia`
+    2.  (optional) Write a `Patter.states_init()` methods to translate initial coordinates to `State`s
+    3.  Write simulation and density methods:
+        -   `Patter.simulate_step(state, model, ...)` (for simulation)
+        -   `Patter.logpdf_step(state_from, state_to, model_move, ...)` (for smoothing)
+    4.  (optional) Write a `model_move_*()` wrapper for convenience
+
+::: callout-note
+`Julia` uses multiple dispatch; that is, the generic `simulate_*()` and `logpdf_*()` functions 'call' different 'methods' depending on the `state` and `model` that is provided. This is similar to `S4` dispatch in `R`. 
+:::
+
+## Custom `ModelObs`
+
+-   For custom `ModelObs` structures, we need to:
+    1.  Register structures in `Julia`
+    1.  (optional) Write `Patter.map_init()` method to sample initial `State`s efficiently
+    2.  Write simulation and density methods:
+        -   `Patter.simulate_obs(state, model, ...)`
+        -   `Patter.logpdf_obs(state, model, ...)`
+        
+## Custom workflow  
+
+-   Define a custom `State`
+-   We will track the location of an animal in three-dimensions:
+
+```{julia}
+# Julia code 
+struct StateCustom <: Patter.State
+  # Map value
+  # > This is required for all states & is the value on the map at (x, y)
+  map_value::Float64
+  # Coordinates
+  x::Float64
+  y::Float64
+  z::Float64
+end
+```
+
+::: callout-tip
+This state is now built into `patter` as `StateXYZ`. 
+:::
+
+## Custom workflow {.smaller}
+
+-   (optional) Define a function to convert initial coordinates to initial states
+-   Here, we simply have to add initial depth values
+-   This is necessary for automated sampling of initial states
+
+```{julia}
+# Julia code
+function Patter.states_init(state_type::Type{StateCustom}, coords::DataFrame)
+    # Add z coordinate
+    coords.z = coords.map_value .* rand(nrow(coords))
+    return coords
+end 
+```
+
+## Custom workflow  
+
+-   Define a corresponding movement model
+
+```{julia}
+# Julia code 
+struct ModelMoveCustom{T, U, V, W, X} <: Patter.ModelMove
+  # The environment (i.e., map)
+  # > This defines the regions within which movements are permitted (i.e., in water)
+  map::T
+  # Distribution for step lengths
+  mobility::U
+  dbn_length::V
+  # Distribution for headings
+  dbn_heading::W
+  # Distribution for changes in depth
+  dbn_z_delta::X
+end
+```
+
+## Custom workflow {.smaller .scrollable}
+
+-   Define a function to simulate new states using the movement model
+-   This is necessary for `sim_path_walk()` and `pf_filter()`
+
+```{julia}
+# Julia code 
+function Patter.simulate_step(state::StateCustom, model::ModelMoveCustom, t::Int64)
+  # Simulate a step length
+  length  = rand(model.dbn_length)
+  # Simulate a heading
+  heading = rand(model.dbn_heading)
+  # Calculate new x, y, z coordinates
+  x       = state.x + length * cos(heading)
+  y       = state.y + length * sin(heading)
+  z       = state.z + rand(model.dbn_z_delta)
+  # Include the map value
+  map_value = Patter.extract(model.map, x, y)
+  # Define the state
+  StateCustom(map_value, x, y, z)
+end
+```
+
+::: callout-note
+Function arguments are boilerplate. You can edit this code as required for other states. In custom `Julia` methods, use closure to incorporate additional arguments if required.
+:::
+
+## Custom workflow  
+
+-   Provide a `Patter.logpdf_step()` method to compute the **unnormalised** log-probability of an **unrestricted** move
+-   This is necessary for `pf_smoother_two_filter()`
+
+```{julia}
+# Julia code 
+function Patter.logpdf_step(state_from::StateCustom, state_to::StateCustom,
+                            model_move::ModelMoveCustom,
+                            t::Int64,
+                            length::Float64, heading::Float64)
+  # Calculate change in depth
+  z_delta = state_to.z - state_from.z
+  # Evaluate unnormalised log probability
+  logpdf(model_move.dbn_length, length) +
+    logpdf(model_move.dbn_heading, heading) +
+    logpdf(model_move.dbn_z_delta, z_delta)
+end
+```
+
+## Custom workflow  
+
+-   (optional) Write an `R` wrapper to conveniently trial different parametrisations from `R`:
+
+```{r}
+# R code 
+model_move_custom <- function(.mobility = 750.0, 
+                              .dbn_length = "truncated(Gamma(1.0, 750.0), upper = 750.0)",
+                              .dbn_heading = "Uniform(-pi, pi)",
+                              .dbn_z_delta = "Normal(0, 3.5)") {
+  glue::glue('ModelMoveCustom(env, {.mobility}, {.dbn_length}, {.dbn_heading}, {.dbn_z_delta});')
+}
+```
+
+## Custom workflow  
+
+-   Now we'll define a custom observation model
+-   We imagine we have depth observations for a pelagic species
+
+```{julia}
+# Julia code 
+struct ModelObsDepthNormalTrunc <: Patter.ModelObs
+  sensor_id::Int64
+  depth_sigma::Float64
+end
+```
+
+::: callout-note
+This is similar to `ModelObsDepthNormalTruncSeabed` but the likelihood is normally distributed around the observation, not the seabed. For simplicity, we assume the depth of the seabed is known exactly.
+:::
+
+## Custom workflow {.smaller .scrollable}
+
+-   (optional) Write a `Patter.map_init()` method for more efficient automated sampling of initial states
+-   This example routine ensures that we only sample from locations where the bathymetric depth is at least as deep at the observed depth
+
+```{julia}
+# Julia code 
+function map_init(map::Rasters.Raster, 
+                  timeline::Vector{DateTime}, 
+                  model_move::ModelMove, 
+                  dataset::DataFrame,
+                  model_obs_type::Type{ModelObsDepthNormalTrunc}, 
+                  direction::String = "forward")
+    # Check dataset
+    check_names(dataset, ["timestamp", "obs", "depth_sigma"])
+    # Identify the first depth observation 
+    t1  = ifelse(direction == "forward", first(timeline), last(timeline))
+    pos = findall(dataset.timestamp .== t1)
+    if length(pos) == 0
+        return map
+    elseif length(pos) != 1
+        error("Multiple depth observations recorded at the first time stamp.")
+    end 
+    depth = dataset.obs[pos]
+    # Mask map between limits (false/true -> NaN/true)
+    # * map must be >= depth
+    msk = (map .>= depth)
+    msk = classify(msk, false => missingval(map))
+    map = mask(map, with = msk)
+    return map
+end 
+```
+
+## Custom workflow  
+
+-   (optional) Write a `Patter.simulate_obs()` method to simulate new observations 
+-   This is necessary for `sim_observations()`
+
+```{julia}
+# Julia code 
+# > This simulates s_{t} from s_{t - 1}
+function Patter.simulate_obs(state::StateCustom, model::ModelObsDepthNormalTrunc, t::Int64)
+  dbn   = truncated(Normal(state.z, model.depth_sigma), 
+                    0.0, state.map_value)
+  rand(dbn)
+end
+```
+
+## Custom workflow  
+
+-   Write a `Patter.logpdf_obs()` method to evaluate the log-probability of the observations
+-   This is required for `pf_filter()`
+
+```{julia}
+# Julia code 
+function Patter.logpdf_obs(state::State, model::ModelObsDepthNormalTrunc, t::Int64, obs::Float64)
+  dbn   = truncated(Normal(state.z, model.depth_sigma),
+                    0.0, state.map_value)
+  logpdf(dbn, obs)
+end
+```
+
+## Custom workflow
+
+-   Simulate an example movement path:
+```{r, eval = FALSE}
+# Back to R!
+state      <- "StateCustom"
+mobility   <- 750.0
+model_move <- model_move_custom()
+path <- sim_path_walk(.map        = map,
+                      .timeline   = timeline,
+                      .state      = state,
+                      .model_move = model_move)
+
+```
+
+## Custom workflow
+
+-   Simulate an example movement path:
+```{r, echo = FALSE}
+state      <- "StateCustom"
+mobility   <- 750.0
+model_move <- model_move_custom()
+path <- sim_path_walk(.map        = map,
+                      .timeline   = timeline,
+                      .state      = state,
+                      .model_move = model_move)
+```
+
+## Custom workflow
+
+-   Simulate observations:
+
+```{r}
+# Run simulation 
+ obs <-
+   sim_observations(.timeline = timeline,
+                    .model_obs = list(ModelObsDepthNormalTrunc = 
+                                        data.table(sensor_id = 1L, depth_sigma = 5)))
+ arc  <- obs$ModelObsDepthNormalTrunc[[1]]
+ yobs <- list(ModelObsDepthNormalTrunc = arc)
+```
+
+```{r, eval = FALSE}
+ # Visualise simulated observations 
+ plot(arc$timestamp, arc$obs * -1,
+      col = "royalblue", type = "l",
+      ylim = c(-max(arc$obs), 0),
+      xlab = "Time stamp", ylab = "Depth (m)")
+```
+
+## Custom workflow
+
+```{r, echo = FALSE}
+ plot(arc$timestamp, arc$obs * -1,
+      col = "royalblue", type = "l",
+      ylim = c(-max(arc$obs), 0),
+      xlab = "Time stamp", ylab = "Depth (m)")
+```
+
+## Custom workflow
+
+-   Run the algorithms:
+```{r}
+ args <- list(.timeline    = timeline,
+              .state       = state,
+              .yobs        = yobs,
+              .model_move  = model_move,
+              .n_particle  = 1e5L)
+
+ fwd <- do.call(pf_filter, args, quote = TRUE)
+ args$.direction <- "backward"
+ bwd <- do.call(pf_filter, args, quote = TRUE)
+ smo <- pf_smoother_two_filter()
+```
+
+## Custom workflow
+
+-   Compare simulated depths with particle depths:
+```{r}
+plot(smo$states$timestamp, smo$states$z * -1, 
+     pch = ".", col = "dimgrey", 
+     ylim = c(-max(smo$states$z), 0),
+     xlab = "Time stamp", ylab = "Depth (m)")
+lines(arc$timestamp, arc$obs * -1, col = "royalblue")
+```
+
+## Custom workflow
+
+-   Compare simulated and reconstructed patterns of space use: 
+
+```{r, eval = FALSE}
+pp <- par(mfrow = c(1, 2))
+map_dens(.map = map, 
+         .coord = path, 
+         .discretise = TRUE, 
+         .sigma =  bw.diggle)
+map_dens(.map = map, 
+         .coord = smo$states, 
+         .discretise = TRUE, 
+         .sigma =  bw.diggle)
+par(pp)
+```
+
+## Custom workflow
+
+```{r, echo = FALSE}
+pp <- par(mfrow = c(1, 2))
+map_dens(.map = map, .coord = path, .discretise = TRUE, .sigma =  bw.diggle) |> invisible()
+map_dens(.map = map, .coord = smo$states, .discretise = TRUE, .sigma =  bw.diggle) |> invisible()
+par(pp)
+```
+
+## Parallelisation
+
+-   In practice, we want to analyse the data for many individuals
+
+-   You have two options for parallelisation:
+
+    1.  Iterate over individuals in sequence and **use multi-threading in `Julia`**
+    2.  Parallelise over time series in `R` in a socket cluster and use single-threading in `Julia`
+
+-   Forking is not supported with `JuliaCall`
+
+## Parallelisation {.smaller .scrollable}
+
+-   Here is some pseudocode to set up a socket cluster
+
+```{r, eval = FALSE}
+# Initialise Julia
+julia_connect(.threads = 1L)
+
+# Set up cluster 
+cl <- makeCluster(2L)
+clusterExport(cl, ...)
+clusterEvalQ(cl, {
+  library(patter)
+  
+  # Iteratively attempt julia_connect()
+  # > On Windows, Julia make be locked -> error
+  try(julia_connect(), ...)
+  
+  # Set Julia objects on each core
+  JuliaCall:::.julia$cmd("using RCall")
+  set_map(...)
+  set_seed()
+  
+  NULL
+})
+
+# Run analyses in parallel e.g., via cl_lapply()
+# * See .chunk argument for more efficient parallelism
+patter::cl_lapply(..., .cl = cl, .fun = function(x) {
+  patter_workflow(...)
+})
+```
+
+::: callout-note
+See the [`patter-eval`](https://github.com/edwardlavender/patter-eval/blob/main/R/008-run-patter.R) project for an example where socket clusters were used.
+:::
+
+## Parallelisation
+
+-   For large-scale analyses, it is a good idea to gauge (and minimise) requirements
+-   These rack up quickly if you are not careful
+
+::: callout-tip
+The `file_*()` helpers (e.g., `file_size()`) are useful wrappers for interacting with the file system. 
+:::
+
+# Development {.smaller}
+
+1.  **Continued improvements and optimisation**
+
+3.  Backwards sampling algorithms 
+
+3. `patter.workflows` package:
+    - Iterative applications over multiple individuals
+    - Community-driven conversion routines (e.g., `as_actel()`, `as_glatos()`)
+    - Additional helper routines (residency, spatial tools, ...)
+    
+4.  Community-driven `PatterModels.jl` accessories package
+
+5.  Other model-based inference packages (e.g., [Wahoo.jl](https://github.com/scheidan/Wahoo.jl))
+
+# Issues
+
+-   Please get in touch with queries, issues & suggestions!
+
+-   Don't spend weeks trying to get `patter` working if you hit a problem---reach out!
+
+-   See <https://github.com/edwardlavender/patter/issues>
